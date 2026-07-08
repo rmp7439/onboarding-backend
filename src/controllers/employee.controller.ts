@@ -1,12 +1,7 @@
-import { Request, Response } from "express";
+import { RequestHandler } from "express";
 import { EmployeeService } from "../services/employee/employee.service";
 
-// Define explicit interfaces for your request parameters and bodies
-interface EmployeeIdParam {
-  id: string;
-}
-
-export const register = async (req: Request, res: Response): Promise<void> => {
+export const register: RequestHandler = async (req, res): Promise<void> => {
   try {
     const employee = await EmployeeService.registerEmployee(req.body);
     res.status(201).json({ success: true, data: employee });
@@ -16,10 +11,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const getEmployees = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const getEmployees: RequestHandler = async (req, res): Promise<void> => {
   try {
     const employees = await EmployeeService.getAllEmployees();
     res.status(200).json({ success: true, data: employees });
@@ -30,12 +22,10 @@ export const getEmployees = async (
   }
 };
 
-export const getEmployeeById = async (
-  req: Request<EmployeeIdParam>,
-  res: Response,
-): Promise<void> => {
+export const getEmployeeById: RequestHandler = async (req, res): Promise<void> => {
   try {
-    const { id } = req.params; // TS now knows 'id' is strictly a string
+    // String() guarantees this is treated as a standard string, fixing ts(2345)
+    const id = String(req.params.id); 
     const employee = await EmployeeService.getEmployeeById(id);
     res.status(200).json({ success: true, data: employee });
   } catch (error: any) {
@@ -43,14 +33,11 @@ export const getEmployeeById = async (
   }
 };
 
-export const updateStatus = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const updateStatus: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { id, status } = req.body;
     const updatedEmployee = await EmployeeService.updateEmployeeStatus(
-      id,
+      String(id),
       status,
     );
     res.status(200).json({ success: true, data: updatedEmployee });
@@ -60,14 +47,11 @@ export const updateStatus = async (
   }
 };
 
-export const updateCode = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const updateCode: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { id, employeeCode } = req.body;
     const updatedEmployee = await EmployeeService.updateEmployeeCode(
-      id,
+      String(id),
       employeeCode,
     );
     res.status(200).json({ success: true, data: updatedEmployee });

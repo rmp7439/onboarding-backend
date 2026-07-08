@@ -99,6 +99,16 @@ model Employee {
   @@index([firstName, surname])
 }
 
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Document {
   id String @id @default(cuid())
 

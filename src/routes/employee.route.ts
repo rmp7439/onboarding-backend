@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, RequestHandler } from 'express';
 import { 
   register, 
   getEmployees, 
@@ -11,22 +11,23 @@ import {
   validateStatusUpdate, 
   validateCodeUpdate 
 } from '../middleware/employee.validator';
+import { authenticateAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Matches: POST /employee/register
-router.post('/employee/register', validateRegistration, register);
+// Public / Mobile facing
+router.post('/employee/register', validateRegistration as RequestHandler, register as RequestHandler);
 
-// Matches: GET /employees
-router.get('/employees', getEmployees);
+// Protected Admin facing
+router.get('/employees', authenticateAdmin as RequestHandler, getEmployees as RequestHandler);
 
 // Matches: GET /employee/:id
-router.get('/employee/:id', getEmployeeById);
+router.get('/employee/:id', authenticateAdmin as RequestHandler, getEmployeeById as RequestHandler);
 
 // Matches: PATCH /employee/status
-router.patch('/employee/status', validateStatusUpdate, updateStatus);
+router.patch('/employee/status', authenticateAdmin as RequestHandler, validateStatusUpdate as RequestHandler, updateStatus as RequestHandler);
 
 // Matches: PATCH /employee/code
-router.patch('/employee/code', validateCodeUpdate, updateCode);
+router.patch('/employee/code', authenticateAdmin as RequestHandler, validateCodeUpdate as RequestHandler, updateCode as RequestHandler);
 
 export default router;
