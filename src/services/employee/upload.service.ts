@@ -1,28 +1,30 @@
 import { prisma } from '../../config/prisma';
 import { DocumentType, Employee, Document } from '@prisma/client';
-import path from 'path';
+import { DocumentProcessorService } from '../processing/document-processor.service';
 
 export class UploadService {
-  /**
-   * Saves selfie metadata directly to the Employee record.
-   */
+  
   static async saveSelfie(employeeId: string, file: Express.Multer.File): Promise<Employee> {
     const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
     if (!employee) throw new Error('Employee not found.');
 
+    // Process the image (converts PNG/JPEG to JPG)
+    const processedMetadata = await DocumentProcessorService.processImage(
+      file.path, 
+      file.filename, 
+      file.mimetype
+    );
+
     return prisma.employee.update({
       where: { id: employeeId },
       data: {
-        selfieFilename: file.filename,
-        selfieMimeType: file.mimetype,
-        selfieSize: file.size,
+        selfieFilename: processedMetadata.filename,
+        selfieMimeType: processedMetadata.mimeType,
+        selfieSize: processedMetadata.size,
       }
     });
   }
 
-  /**
-   * Saves document metadata (Aadhaar, PAN, etc.) to the Document table.
-   */
   static async saveDocument(
     employeeId: string, 
     type: DocumentType, 
@@ -31,15 +33,28 @@ export class UploadService {
     const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
     if (!employee) throw new Error('Employee not found.');
 
+    const isImage = file.mimetype.startsWith('image/');
+    let processedMetadata;
+
+    if (isImage) {
+      // Processes image documents (like a photo of an Aadhaar card) to JPG
+      processedMetadata = await DocumentProcessorService.processImage(file.path, file.filename, file.mimetype);
+    } else if (file.mimetype === 'application/pdf') {
+      // Passes PDFs through unmodified
+      processedMetadata = await DocumentProcessorService.processDocument(file.path, file.filename, file.mimetype);
+    } else {
+      throw new Error('Unsupported document format. Only images and PDFs are allowed.');
+    }
+
     return prisma.document.create({
       data: {
         employeeId,
         type,
-        storedFilename: file.filename,
+        storedFilename: processedMetadata.filename,
         originalFilename: file.originalname,
-        mimeType: file.mimetype,
-        fileSize: file.size,
-        fileExtension: path.extname(file.originalname)
+        mimeType: processedMetadata.mimeType,
+        fileSize: processedMetadata.size,
+        fileExtension: processedMetadata.extension
       }
     });
   }

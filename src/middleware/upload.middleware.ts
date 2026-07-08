@@ -3,7 +3,6 @@ import path from 'path';
 import crypto from 'crypto';
 import fs from 'fs';
 
-// Ensure the target directory exists
 const uploadDir = path.join(__dirname, '../../uploads/originals');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -14,7 +13,6 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Generate a unique identifier: fieldname-randomHex-timestamp.extension
     const uniqueSuffix = crypto.randomBytes(6).toString('hex') + '-' + Date.now();
     const ext = path.extname(file.originalname);
     cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
@@ -22,12 +20,17 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+  // Version 1: Strictly limited to basic images and PDFs
+  const allowedMimeTypes = [
+    'image/jpeg', 
+    'image/png', 
+    'application/pdf'
+  ];
   
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, WEBP, and PDF files are allowed.'));
+    cb(new Error('Invalid file type. Only JPG, PNG, and PDF files are supported in Version 1.'));
   }
 };
 
