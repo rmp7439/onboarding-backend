@@ -6,3 +6,119 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum EmployeeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum DocumentType {
+  AADHAAR
+  PAN
+  DRIVING_LICENSE
+  BANK_PASSBOOK
+  EDUCATION
+  VOTER_ID
+  DISCHARGE_BOOK
+}
+
+enum BloodGroup {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+}
+
+model Employee {
+  id String @id @default(cuid())
+
+  employeeCode String? @unique
+
+  status EmployeeStatus @default(PENDING)
+
+  // Personal
+  firstName   String
+  surname     String
+  fatherName  String
+  husbandName String?
+
+  gender Gender
+
+  bloodGroup BloodGroup
+
+  dateOfBirth DateTime
+  joiningDate DateTime
+
+  mobile String @unique
+
+  // Identity
+  aadhaar String  @unique
+  pan     String  @unique
+  uan     String?
+  esic    String?
+
+  // Address
+  permanentAddress String
+  currentAddress   String
+  city             String
+  state            String
+  pinCode          String
+
+  // Bank
+  bankName      String
+  accountNumber String
+  ifsc          String
+  branch        String
+  micr          String
+
+  // Emergency
+  emergencyName     String
+  emergencyRelation String
+  emergencyPhone    String
+
+  // Selfie
+  selfieFilename String?
+  selfieMimeType String?
+  selfieSize     Int?
+
+  documents Document[]
+
+  uploadedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([firstName, surname])
+}
+
+model Document {
+  id String @id @default(cuid())
+
+  employeeId String
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  type DocumentType
+
+  storedFilename String
+
+  originalFilename String
+
+  mimeType String
+
+  fileSize Int
+
+  uploadedAt DateTime @default(now())
+
+  fileExtension String
+
+  @@index([employeeId])
+}
