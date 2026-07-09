@@ -5,6 +5,7 @@ import uploadRouter from './upload.route';
 import dashboardRouter from './dashboard.route';
 import authRouter from './auth.route';
 import reportRouter from './report.route';
+import downloadRouter from './download.route'; // ADD THIS
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use(uploadRouter);
 router.use(dashboardRouter);
 router.use(authRouter);
 router.use(reportRouter);
+router.use(downloadRouter); // ADD THIS
 
 export default router;
