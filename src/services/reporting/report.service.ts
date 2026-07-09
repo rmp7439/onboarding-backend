@@ -40,22 +40,50 @@ export class ReportService {
     worksheet.columns = [
       { header: "Employee Code", key: "code", width: 20 },
       { header: "Employee Name", key: "name", width: 30 },
-      { header: "Unit", key: "unit", width: 20 },
-      { header: "Phone Number", key: "phone", width: 20 },
-      { header: "Status", key: "status", width: 15 },
-      { header: "Joining Date", key: "joiningDate", width: 20 },
+      { header: "Father's Name", key: "fatherName", width: 25 },
+      { header: "Mobile Number", key: "mobile", width: 15 },
+      { header: "Date of Joining", key: "joiningDate", width: 15 },
+      { header: "Unit / Site", key: "unit", width: 20 },
+      { header: "Gender", key: "gender", width: 10 },
+      { header: "Date of Birth", key: "dateOfBirth", width: 15 },
+      { header: "Blood Group", key: "bloodGroup", width: 15 },
+      { header: "Aadhaar Number", key: "aadhaar", width: 20 },
+      { header: "PAN Number", key: "pan", width: 15 },
+      { header: "UAN Number", key: "uan", width: 20 },
+      { header: "ESIC Number", key: "esic", width: 20 },
+      { header: "Bank Name", key: "bankName", width: 25 },
+      { header: "Account Number", key: "accountNumber", width: 20 },
+      { header: "IFSC Code", key: "ifsc", width: 15 },
+      { header: "Branch", key: "branch", width: 20 },
+      { header: "MICR Code", key: "micr", width: 15 },
     ];
 
     worksheet.getRow(1).font = { bold: true };
 
     employees.forEach((emp) => {
       worksheet.addRow({
-        code: emp.employeeCode || "PENDING",
-        name: `${emp.firstName} ${emp.surname}`,
-        unit: "N/A",
-        phone: emp.mobile,
-        status: emp.status,
-        joiningDate: emp.joiningDate.toISOString().split("T")[0],
+        code: emp.employeeCode || "",
+        name: `${emp.firstName} ${emp.surname}`.trim(),
+        fatherName: emp.fatherName || "",
+        mobile: emp.mobile || "",
+        joiningDate: emp.joiningDate
+          ? emp.joiningDate.toISOString().split("T")[0]
+          : "",
+        unit: "", // Unit is currently not in the DB schema; left blank as per requirements
+        gender: emp.gender || "",
+        dateOfBirth: emp.dateOfBirth
+          ? emp.dateOfBirth.toISOString().split("T")[0]
+          : "",
+        bloodGroup: emp.bloodGroup || "",
+        aadhaar: emp.aadhaar || "",
+        pan: emp.pan || "",
+        uan: emp.uan || "",
+        esic: emp.esic || "",
+        bankName: emp.bankName || "",
+        accountNumber: emp.accountNumber || "",
+        ifsc: emp.ifsc || "",
+        branch: emp.branch || "",
+        micr: emp.micr || "",
       });
     });
 
