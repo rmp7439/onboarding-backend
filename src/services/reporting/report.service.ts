@@ -4,29 +4,50 @@ import PDFDocument from "pdfkit";
 
 export class ReportService {
   static async exportExcel(filters: {
-    status?: string;
-    search?: string;
-    startDate?: string;
-    endDate?: string;
+    code?: string;
+    name?: string;
+    joiningDate?: string;
   }): Promise<Buffer> {
     const where: any = {};
 
-    if (filters.status && filters.status !== "ALL") {
-      where.status = filters.status;
+    if (filters.code) {
+      where.employeeCode = {
+        contains: filters.code.trim(),
+        mode: "insensitive",
+      };
     }
 
-    if (filters.search) {
-      where.OR = [
-        { firstName: { contains: filters.search, mode: "insensitive" } },
-        { employeeCode: { contains: filters.search, mode: "insensitive" } },
-      ];
+    if (filters.name) {
+      const nameTrimmed = filters.name.trim();
+      const spaceIdx = nameTrimmed.indexOf(" ");
+
+      if (spaceIdx !== -1) {
+        // If there's a space, assume they are searching [First Name] [Surname]
+        const firstPart = nameTrimmed.slice(0, spaceIdx);
+        const secondPart = nameTrimmed.slice(spaceIdx + 1);
+        where.AND = [
+          { firstName: { contains: firstPart, mode: "insensitive" } },
+          { surname: { contains: secondPart, mode: "insensitive" } },
+        ];
+      } else {
+        // If a single word, check if it matches either firstName OR surname
+        where.OR = [
+          { firstName: { contains: nameTrimmed, mode: "insensitive" } },
+          { surname: { contains: nameTrimmed, mode: "insensitive" } },
+        ];
+      }
     }
 
-    if (filters.startDate || filters.endDate) {
-      where.joiningDate = {};
-      if (filters.startDate)
-        where.joiningDate.gte = new Date(filters.startDate);
-      if (filters.endDate) where.joiningDate.lte = new Date(filters.endDate);
+    if (filters.joiningDate) {
+      // Create exact day boundaries since the frontend sends YYYY-MM-DD
+      const dStart = new Date(filters.joiningDate);
+      const dEnd = new Date(dStart);
+      dEnd.setDate(dEnd.getDate() + 1);
+
+      where.joiningDate = {
+        gte: dStart,
+        lt: dEnd,
+      };
     }
 
     const employees = await prisma.employee.findMany({
