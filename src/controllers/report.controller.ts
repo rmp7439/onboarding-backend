@@ -17,7 +17,6 @@ export const exportExcel = async (req: Request, res: Response): Promise<void> =>
 
 export const downloadPdf = async (req: Request, res: Response): Promise<void> => {
   try {
-    // FIX: Explicitly cast the parameter as a string
     const id = req.params.id as string; 
     
     const buffer = await ReportService.generateEmployeePdf(id);

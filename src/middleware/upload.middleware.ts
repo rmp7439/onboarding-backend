@@ -3,6 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import fs from 'fs';
 import { AppError } from '../utils/AppError';
+import { Request } from 'express';
 
 const uploadDir = path.join(__dirname, '../../uploads/originals');
 if (!fs.existsSync(uploadDir)) {
@@ -21,7 +22,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'];
   const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf'];
   

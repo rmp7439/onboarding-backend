@@ -1,12 +1,11 @@
 import { prisma } from '../../config/prisma';
-import { Employee, EmployeeStatus } from '@prisma/client';
+import { Employee, EmployeeStatus, Prisma} from '@prisma/client';
 
 export class EmployeeService {
   /**
    * Registers a new employee, ensuring uniqueness for Aadhaar, PAN, and Mobile.
    */
-  static async registerEmployee(data: any): Promise<Employee> {
-    // 1. Check for duplicates
+  static async registerEmployee(data: Prisma.EmployeeCreateInput): Promise<Employee> {
     const existingEmployee = await prisma.employee.findFirst({
       where: {
         OR: [
@@ -23,18 +22,16 @@ export class EmployeeService {
       if (existingEmployee.pan === data.pan) throw new Error('PAN already registered.');
     }
 
-    // 2. Format dates properly if they come as strings
     const dateOfBirth = new Date(data.dateOfBirth);
     const joiningDate = new Date(data.joiningDate);
 
-    // 3. Create record enforcing defaults
     return prisma.employee.create({
       data: {
         ...data,
         dateOfBirth,
         joiningDate,
         status: EmployeeStatus.PENDING,
-        employeeCode: null, // Remains NULL until admin approval
+        employeeCode: null,
       }
     });
   }
