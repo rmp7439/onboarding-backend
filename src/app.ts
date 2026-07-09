@@ -1,4 +1,5 @@
 import express, { Application } from 'express';
+import path from 'path';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -11,6 +12,13 @@ const app: Application = express();
 
 // Security Headers
 app.use(helmet());
+
+app.use(express.json({ limit: '10kb' })); 
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+app.use('/api', apiRouter);
 
 // Strict CORS
 app.use(cors({

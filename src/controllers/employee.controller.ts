@@ -24,10 +24,19 @@ export const getEmployees: RequestHandler = async (req, res): Promise<void> => {
 
 export const getEmployeeById: RequestHandler = async (req, res): Promise<void> => {
   try {
-    // String() guarantees this is treated as a standard string, fixing ts(2345)
     const id = String(req.params.id); 
     const employee = await EmployeeService.getEmployeeById(id);
-    res.status(200).json({ success: true, data: employee });
+    
+    // Construct the full URL for the selfie
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const selfieUrl = employee.selfieFilename 
+      ? `${baseUrl}/uploads/jpg/${employee.selfieFilename}` 
+      : null;
+
+    res.status(200).json({ 
+      success: true, 
+      data: { ...employee, selfieUrl } // <-- Include selfieUrl in the response
+    });
   } catch (error: any) {
     res.status(404).json({ success: false, error: error.message });
   }
