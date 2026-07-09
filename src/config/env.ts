@@ -14,10 +14,12 @@ interface EnvConfig {
   PORT: number;
   NODE_ENV: string;
   CORS_ORIGIN: string;
+  JWT_SECRET: string;
 }
 
 export const env: EnvConfig = {
   PORT: parseInt(process.env.PORT || '5000', 10),
   NODE_ENV: process.env.NODE_ENV || 'development',
-  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173', // Adjust to your frontend port
+  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  JWT_SECRET: process.env.JWT_SECRET || 'dev-secret',
 };

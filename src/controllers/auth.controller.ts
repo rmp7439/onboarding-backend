@@ -3,6 +3,8 @@ import { AuthService } from "../services/auth/auth.service";
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log(req.body);
+    
     const { email, password } = req.body;
     
     if (!email || !password) {

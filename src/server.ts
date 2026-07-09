@@ -5,7 +5,7 @@ import { AuthService } from './services/auth/auth.service';
 const startServer = async (): Promise<void> => {
   try {
     await AuthService.createInitialAdmin();
-
+    
     app.listen(env.PORT, () => {
       console.log(
         `[server]: Server is running in ${env.NODE_ENV} mode at http://localhost:${env.PORT}`
