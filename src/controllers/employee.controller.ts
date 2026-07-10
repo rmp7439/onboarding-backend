@@ -65,6 +65,22 @@ export const getEmployeeById: RequestHandler = async (req, res): Promise<void> =
   }
 };
 
+export const searchEmployees: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const query = String(req.query.q || '');
+    
+    if (!query) {
+      res.status(200).json({ success: true, data: [] });
+      return;
+    }
+
+    const results = await EmployeeService.searchEmployees(query);
+    res.status(200).json({ success: true, data: results });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: "Failed to search employees." });
+  }
+};
+
 export const updateStatus: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { id, status } = req.body;

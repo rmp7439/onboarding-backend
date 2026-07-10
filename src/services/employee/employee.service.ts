@@ -58,6 +58,36 @@ export class EmployeeService {
     };
   }
 
+  /**
+   * Searches employees based on a text query.
+   * Only returns safe, non-sensitive fields for the mobile app list view.
+   */
+  static async searchEmployees(query: string) {
+    const employees = await prisma.employee.findMany({
+      where: {
+        OR: [
+          { firstName: { contains: query, mode: 'insensitive' } },
+          { surname: { contains: query, mode: 'insensitive' } },
+          { employeeCode: { contains: query, mode: 'insensitive' } },
+          { mobile: { contains: query } },
+          { aadhaar: { contains: query } } // Allow searching by Aadhaar
+        ]
+      },
+      take: 20, // Limit results for performance
+      orderBy: { uploadedAt: 'desc' }
+    });
+
+    // Strip sensitive info before returning to the mobile app
+    return employees.map(emp => ({
+      id: emp.id,
+      firstName: emp.firstName,
+      surname: emp.surname,
+      employeeCode: emp.employeeCode,
+      status: emp.status,
+      mobile: emp.mobile,
+    }));
+  }
+
   static async getAllEmployees(): Promise<Employee[]> {
     return prisma.employee.findMany({
       orderBy: { uploadedAt: 'desc' }

@@ -5,7 +5,8 @@ import {
   getEmployeeById, 
   updateStatus, 
   updateCode,
-  getEmployeeProfile
+  getEmployeeProfile,
+  searchEmployees
 } from '../controllers/employee.controller';
 import { 
   validateRegistration, 
@@ -18,6 +19,8 @@ const router = Router();
 
 // Public / Mobile facing
 router.post('/employee/register', validateRegistration as RequestHandler, register as RequestHandler);
+
+router.get('/employees/search', searchEmployees as RequestHandler);
 
 router.get('/employee/profile/:id', getEmployeeProfile as RequestHandler);
 
