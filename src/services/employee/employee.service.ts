@@ -36,6 +36,28 @@ export class EmployeeService {
     });
   }
 
+  /**
+   * Retrieves an employee profile with only non-sensitive data for the mobile app.
+   */
+  static async getEmployeeProfile(id: string) {
+    // Reuse existing logic to handle existence checks and basic fetch
+    const employee = await this.getEmployeeById(id);
+
+    // Return only the safe, requested fields
+    return {
+      id: employee.id,
+      firstName: employee.firstName,
+      surname: employee.surname,
+      employeeCode: employee.employeeCode,
+      status: employee.status,
+      mobile: employee.mobile,
+      joiningDate: employee.joiningDate,
+      gender: employee.gender,
+      bloodGroup: employee.bloodGroup,
+      selfieFilename: employee.selfieFilename, // Needed to construct the URL in the controller
+    };
+  }
+
   static async getAllEmployees(): Promise<Employee[]> {
     return prisma.employee.findMany({
       orderBy: { uploadedAt: 'desc' }

@@ -22,6 +22,29 @@ export const getEmployees: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
+export const getEmployeeProfile: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const id = String(req.params.id); 
+    const profile = await EmployeeService.getEmployeeProfile(id);
+    
+    // Construct the full URL for the selfie
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const selfieUrl = profile.selfieFilename 
+      ? `${baseUrl}/uploads/jpg/${profile.selfieFilename}` 
+      : null;
+
+    // Strip out the internal selfieFilename before sending to the client
+    const { selfieFilename, ...safeProfile } = profile;
+
+    res.status(200).json({ 
+      success: true, 
+      data: { ...safeProfile, selfieUrl }
+    });
+  } catch (error: any) {
+    res.status(404).json({ success: false, error: error.message });
+  }
+};
+
 export const getEmployeeById: RequestHandler = async (req, res): Promise<void> => {
   try {
     const id = String(req.params.id); 

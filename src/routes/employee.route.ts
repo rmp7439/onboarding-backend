@@ -4,7 +4,8 @@ import {
   getEmployees, 
   getEmployeeById, 
   updateStatus, 
-  updateCode 
+  updateCode,
+  getEmployeeProfile
 } from '../controllers/employee.controller';
 import { 
   validateRegistration, 
@@ -17,6 +18,8 @@ const router = Router();
 
 // Public / Mobile facing
 router.post('/employee/register', validateRegistration as RequestHandler, register as RequestHandler);
+
+router.get('/employee/profile/:id', getEmployeeProfile as RequestHandler);
 
 // Protected Admin facing
 router.get('/employees', authenticateAdmin as RequestHandler, getEmployees as RequestHandler);
