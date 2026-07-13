@@ -15,7 +15,7 @@ export class DocumentProcessorService {
 
   /**
    * Processes an image, converting it to a standardized JPG.
-   * (Maintained for selfie processing)
+   * (Maintained for generic image processing)
    */
   static async processImage(originalPath: string, filename: string, mimeType: string) {
     await this.initDirectories();
@@ -31,6 +31,56 @@ export class DocumentProcessorService {
 
     await sharp(imageBuffer)
       .jpeg({ quality: 80 })
+      .toFile(jpgPath);
+
+    const stat = await fs.stat(jpgPath);
+
+    return {
+      filename: jpgFilename,
+      mimeType: 'image/jpeg',
+      size: stat.size,
+      extension: '.jpg'
+    };
+  }
+
+  /**
+   * Processes a selfie: crops to a square center, masks to a circle, 
+   * and composites onto a solid white background.
+   */
+  static async processSelfie(originalPath: string, filename: string, mimeType: string) {
+    await this.initDirectories();
+    const baseName = path.parse(filename).name;
+    const jpgFilename = `${baseName}.jpg`;
+    const jpgPath = path.join(this.JPG_DIR, jpgFilename);
+
+    if (mimeType === 'image/heic' || mimeType === 'image/heif') {
+      throw new Error('HEIC processing is not yet supported in Version 1.');
+    }
+
+    const imageBuffer = await fs.readFile(originalPath);
+    const metadata = await sharp(imageBuffer).metadata();
+    
+    // Use the minimum dimension to extract a perfect square from the center.
+    const width = metadata.width || 280;
+    const height = metadata.height || 380;
+    const size = Math.min(width, height); 
+
+    // Create a circular SVG mask matching the exact dimensions of our new square
+    const circleSvg = Buffer.from(
+      `<svg width="${size}" height="${size}">
+        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="white" />
+      </svg>`
+    );
+
+    await sharp(imageBuffer)
+      // 1. Crop the original rectangle to a centered square
+      .resize(size, size, { fit: 'cover', position: 'center' })
+      // 2. Apply the circular mask (dest-in keeps only the pixels inside the circle)
+      .composite([{ input: circleSvg, blend: 'dest-in' }])
+      // 3. Flatten the transparent corners onto a pure white background
+      .flatten({ background: '#FFFFFF' })
+      // 4. Output as a high-quality JPEG
+      .jpeg({ quality: 90 }) 
       .toFile(jpgPath);
 
     const stat = await fs.stat(jpgPath);

@@ -8,7 +8,8 @@ export class UploadService {
     const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
     if (!employee) throw new Error('Employee not found.');
 
-    const processedMetadata = await DocumentProcessorService.processImage(
+    // Intercept the selfie upload and route it through the new formatting logic
+    const processedMetadata = await DocumentProcessorService.processSelfie(
       file.path, 
       file.filename, 
       file.mimetype
