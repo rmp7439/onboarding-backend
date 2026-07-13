@@ -44,8 +44,8 @@ export class DocumentProcessorService {
   }
 
   /**
-   * Processes a selfie: crops to a square center, masks to a circle, 
-   * and composites onto a solid white background.
+   * Processes a selfie: crops to a square center, applies a solid white 
+   * frame over the corners to mask it to a circle, and outputs a JPEG.
    */
   static async processSelfie(originalPath: string, filename: string, mimeType: string) {
     await this.initDirectories();
@@ -65,21 +65,26 @@ export class DocumentProcessorService {
     const height = metadata.height || 380;
     const size = Math.min(width, height); 
 
-    // Create a circular SVG mask matching the exact dimensions of our new square
-    const circleSvg = Buffer.from(
-      `<svg width="${size}" height="${size}">
-        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="white" />
+    // Create an SVG overlay. It is a solid white square with a transparent 
+    // circular hole punched out of the center.
+    const overlaySvg = Buffer.from(
+      `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <mask id="circle-hole">
+            <rect width="100%" height="100%" fill="white" />
+            <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="black" />
+          </mask>
+        </defs>
+        <rect width="100%" height="100%" fill="#FFFFFF" mask="url(#circle-hole)" />
       </svg>`
     );
 
     await sharp(imageBuffer)
-      // 1. Crop the original rectangle to a centered square
+      // 1. Crop the original image to a centered square
       .resize(size, size, { fit: 'cover', position: 'center' })
-      // 2. Apply the circular mask (dest-in keeps only the pixels inside the circle)
-      .composite([{ input: circleSvg, blend: 'dest-in' }])
-      // 3. Flatten the transparent corners onto a pure white background
-      .flatten({ background: '#FFFFFF' })
-      // 4. Output as a high-quality JPEG
+      // 2. Draw the white SVG frame over the image
+      .composite([{ input: overlaySvg, blend: 'over' }])
+      // 3. Compress and save as a high-quality JPEG
       .jpeg({ quality: 90 }) 
       .toFile(jpgPath);
 
@@ -95,7 +100,6 @@ export class DocumentProcessorService {
 
   /**
    * Generates a standardized PDF from an image or PDF upload.
-   * The original file in uploads/originals remains untouched.
    */
   static async generateStandardizedPdf(originalPath: string, targetFilename: string, mimeType: string): Promise<any> {
     await this.initDirectories();
@@ -108,7 +112,6 @@ export class DocumentProcessorService {
         
         doc.pipe(stream);
         
-        // A4 size is 595.28 x 841.89 points. Center the image.
         doc.image(originalPath, 0, 0, {
           fit: [595.28, 841.89],
           align: 'center',
@@ -122,7 +125,7 @@ export class DocumentProcessorService {
             const stat = await fs.stat(pdfPath);
             resolve({
               filename: targetFilename,
-              mimeType: 'application/pdf', // Force MIME type to PDF
+              mimeType: 'application/pdf', 
               size: stat.size,
               extension: '.pdf'
             });
@@ -134,7 +137,6 @@ export class DocumentProcessorService {
         stream.on('error', reject);
       });
     } else if (mimeType === 'application/pdf') {
-      // If it is already a PDF, copy it to the structured directory
       await fs.copyFile(originalPath, pdfPath);
       const stat = await fs.stat(pdfPath);
       
