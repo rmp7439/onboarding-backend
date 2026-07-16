@@ -1,39 +1,15 @@
 import { Request, Response } from "express";
-import {
-  ReportFilters,
-  ReportService,
-} from "../services/reporting/report.service";
+import { ReportService } from "../services/reporting/report.service";
 import { prisma } from "../config/prisma";
 import PDFDocument from "pdfkit";
 import path from "path";
 import fs from "fs";
 
-const firstQueryValue = (value: unknown): string | undefined => {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : undefined;
-  }
-
-  if (Array.isArray(value) && typeof value[0] === "string") {
-    const trimmed = value[0].trim();
-    return trimmed.length > 0 ? trimmed : undefined;
-  }
-
-  return undefined;
-};
-
-const buildReportFilters = (query: Request["query"]): ReportFilters => ({
-  code: firstQueryValue(query.code),
-  name: firstQueryValue(query.name),
-  joiningDate: firstQueryValue(query.joiningDate),
-  month: firstQueryValue(query.month),
-  year: firstQueryValue(query.year),
-});
-
 export const exportExcel = async (req: Request, res: Response): Promise<void> => {
   try {
-    const filters = buildReportFilters(req.query);
-    const buffer = await ReportService.exportExcel(filters);
+    const filters = req.query;
+    const baseUrl = `${req.protocol}://${req.get('host')}/api`;
+    const buffer = await ReportService.exportExcel(filters, baseUrl);
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="Employee_Report_${new Date().toISOString().split('T')[0]}.xlsx"`);
@@ -46,8 +22,9 @@ export const exportExcel = async (req: Request, res: Response): Promise<void> =>
 
 export const exportMobileExcel = async (req: Request, res: Response): Promise<void> => {
   try {
-    const filters = buildReportFilters(req.query);
-    const buffer = await ReportService.exportExcel(filters);
+    const filters = req.query;
+    const baseUrl = `${req.protocol}://${req.get('host')}/api`;
+    const buffer = await ReportService.exportExcel(filters, baseUrl);
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="Mobile_Report_${new Date().toISOString().split('T')[0]}.xlsx"`);
@@ -61,7 +38,8 @@ export const exportMobileExcel = async (req: Request, res: Response): Promise<vo
 export const downloadPdf = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string; 
-    const buffer = await ReportService.generateEmployeePdf(id);
+    const baseUrl = `${req.protocol}://${req.get('host')}/api`;
+    const buffer = await ReportService.generateEmployeePdf(id, baseUrl);
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="Employee_Profile_${id}.pdf"`);
@@ -75,7 +53,7 @@ export const downloadPdf = async (req: Request, res: Response): Promise<void> =>
 
 export const getReportEmployees = async (req: Request, res: Response): Promise<void> => {
   try {
-    const filters = buildReportFilters(req.query);
+    const filters = req.query;
     const employees = await ReportService.getFilteredEmployees(filters);
     res.status(200).json({ success: true, data: employees });
   } catch (error: any) {
@@ -85,8 +63,7 @@ export const getReportEmployees = async (req: Request, res: Response): Promise<v
 
 export const getReportEmployeeDetail = async (req: Request, res: Response): Promise<void> => {
   try {
-    const employeeId = String(req.params.id);
-    const employee = await ReportService.getReportEmployeeDetail(employeeId);
+    const employee = await ReportService.getReportEmployeeDetail(String(req.params.id));
     
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const employeeWithSelfie = employee as typeof employee & {
@@ -128,7 +105,6 @@ export const downloadReportDocument = async (req: Request, res: Response): Promi
       return;
     }
 
-    // Reuse existing stream logic from download.controller.ts natively
     if (document.mimeType.startsWith('image/')) {
       const pdfFilename = document.originalFilename.replace(/\.[^/.]+$/, "") + ".pdf";
       res.setHeader('Content-Type', 'application/pdf');

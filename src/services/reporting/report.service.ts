@@ -10,9 +10,75 @@ export interface ReportFilters {
   year?: string;
 }
 
+const DOC_TYPES = [
+  { type: 'AADHAAR', label: 'Aadhaar' },
+  { type: 'PAN', label: 'PAN' },
+  { type: 'DRIVING_LICENSE', label: 'Driving License' },
+  { type: 'BANK_PASSBOOK', label: 'Bank Passbook' },
+  { type: 'EDUCATION', label: 'Education' },
+  { type: 'VOTER_ID', label: 'Voter ID' },
+  { type: 'DISCHARGE_BOOK', label: 'Discharge Book' }
+];
+
 export class ReportService {
+  
+  // Existing methods (getFilteredEmployees, getReportEmployeeDetail) remain completely untouched...
   static async getFilteredEmployees(filters: ReportFilters) {
+    // ... preserved from previous step
     const where: any = {};
+    if (filters.joiningDate) {
+      const dStart = new Date(filters.joiningDate);
+      const dEnd = new Date(dStart);
+      dEnd.setDate(dEnd.getDate() + 1);
+      where.joiningDate = { gte: dStart, lt: dEnd };
+    } else if (filters.month || filters.year) {
+      const currentYear = new Date().getFullYear();
+      const targetYear = filters.year ? parseInt(filters.year, 10) : currentYear;
+      const targetMonth = filters.month ? parseInt(filters.month, 10) - 1 : 0;
+      const startDate = new Date(targetYear, filters.month ? targetMonth : 0, 1);
+      const endDate = new Date(targetYear, filters.month ? targetMonth + 1 : 12, 1);
+      where.joiningDate = { gte: startDate, lt: endDate };
+    }
+    if (filters.code) {
+      where.employeeCode = { contains: filters.code.trim(), mode: "insensitive" };
+    }
+
+    return prisma.employee.findMany({
+      where,
+      orderBy: { joiningDate: "desc" },
+      select: {
+        id: true, firstName: true, surname: true, employeeCode: true, joiningDate: true,
+        documents: { select: { id: true, type: true } }
+      }
+    });
+  }
+
+  static async getReportEmployeeDetail(id: string) {
+    // ... preserved from previous step
+    const employee = await prisma.employee.findUnique({
+      where: { id },
+      select: {
+        id: true, firstName: true, surname: true, fatherName: true, husbandName: true,
+        mobile: true, employeeCode: true, joiningDate: true, uploadedAt: true, selfieFilename: true,
+        documents: { select: { id: true, type: true } }
+      }
+    });
+    if (!employee) throw new Error("Employee not found in reports database.");
+    return employee;
+  }
+
+  static async exportExcel(
+    filters: ReportFilters,
+    baseUrl: string,
+    dynamicColumns: { header: string; key: string; width?: number }[] = [
+      { header: "ADDITIONAL COLUMN 1", key: "additionalCol1", width: 25 }
+    ]
+  ): Promise<Buffer> {
+    const where: any = {};
+
+    if (filters.code) {
+      where.employeeCode = { contains: filters.code.trim(), mode: "insensitive" };
+    }
 
     if (filters.joiningDate) {
       const dStart = new Date(filters.joiningDate);
@@ -23,103 +89,16 @@ export class ReportService {
       const currentYear = new Date().getFullYear();
       const targetYear = filters.year ? parseInt(filters.year, 10) : currentYear;
       const targetMonth = filters.month ? parseInt(filters.month, 10) - 1 : 0;
-      
       const startDate = new Date(targetYear, filters.month ? targetMonth : 0, 1);
       const endDate = new Date(targetYear, filters.month ? targetMonth + 1 : 12, 1);
-      
       where.joiningDate = { gte: startDate, lt: endDate };
     }
 
-    if (filters.code) {
-      where.employeeCode = { contains: filters.code.trim(), mode: "insensitive" };
-    }
-
-    return prisma.employee.findMany({
-      where,
-      orderBy: { joiningDate: "desc" },
-      select: {
-        id: true,
-        firstName: true,
-        surname: true,
-        employeeCode: true,
-        joiningDate: true,
-        // Include minimal document metadata for the Admin UI list
-        documents: {
-          select: { id: true, type: true }
-        }
-      }
-    });
-  }
-
-  static async getReportEmployeeDetail(id: string) {
-    const employee = await prisma.employee.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        firstName: true,
-        surname: true,
-        fatherName: true,
-        husbandName: true,
-        mobile: true,
-        employeeCode: true,
-        joiningDate: true,
-        uploadedAt: true,
-        selfieFilename: true,
-        // Include minimal document metadata for Mobile UI detail
-        documents: {
-          select: { id: true, type: true }
-        }
-      }
-    });
-
-    if (!employee) throw new Error("Employee not found in reports database.");
-    return employee;
-  }
-
-  static async exportExcel(
-    filters: ReportFilters,
-    dynamicColumns: { header: string; key: string; width?: number }[] = [
-      { header: "ADDITIONAL COLUMN 1", key: "additionalCol1", width: 25 }, // Dynamic column support
-    ],
-  ): Promise<Buffer> {
-    const where: any = {};
-
-    if (filters.code) {
-      where.employeeCode = {
-        contains: filters.code.trim(),
-        mode: "insensitive",
-      };
-    }
-
-    if (filters.joiningDate) {
-      const dStart = new Date(filters.joiningDate);
-      const dEnd = new Date(dStart);
-      dEnd.setDate(dEnd.getDate() + 1);
-      where.joiningDate = { gte: dStart, lt: dEnd };
-    } else if (filters.month || filters.year) {
-      const currentYear = new Date().getFullYear();
-      const targetYear = filters.year
-        ? parseInt(filters.year, 10)
-        : currentYear;
-      const targetMonth = filters.month ? parseInt(filters.month, 10) - 1 : 0;
-
-      const startDate = new Date(
-        targetYear,
-        filters.month ? targetMonth : 0,
-        1,
-      );
-      const endDate = new Date(
-        targetYear,
-        filters.month ? targetMonth + 1 : 12,
-        1,
-      );
-
-      where.joiningDate = { gte: startDate, lt: endDate };
-    }
-
+    // INCLUDE documents in the query
     const employees = await prisma.employee.findMany({
       where,
       orderBy: { uploadedAt: "desc" },
+      include: { documents: true },
     });
 
     const workbook = new ExcelJS.Workbook();
@@ -166,63 +145,76 @@ export class ReportService {
       { header: "PermanentAdd2", key: "permanentAdd2", width: 25 },
       { header: "PermanentPincode", key: "permanentPincode", width: 15 },
       { header: "CompID", key: "compId", width: 15 },
-      { header: "Error", key: "error", width: 10 },
+      { header: "Error", key: "error", width: 10 }
     ];
 
-    worksheet.columns = [...baseColumns, ...dynamicColumns];
+    // Document Specific Columns
+    const documentColumns = DOC_TYPES.map(dt => ({
+      header: `${dt.label.toUpperCase()} DOC`,
+      key: `doc_${dt.type}`,
+      width: 25
+    }));
+
+    worksheet.columns = [...baseColumns, ...dynamicColumns, ...documentColumns];
     worksheet.getRow(1).font = { bold: true };
 
+    const getDocHyperlink = (docs: any[], type: string, label: string) => {
+      const doc = docs.find(d => d.type === type);
+      if (doc) {
+        return { text: `View ${label}`, hyperlink: `${baseUrl}/document/${doc.id}/download` };
+      }
+      return "Not Uploaded";
+    };
+
     employees.forEach((emp) => {
-      worksheet.addRow({
+      const rowData: any = {
         empCode: emp.employeeCode || "",
         applicationNo: emp.id || "",
         clientEmpId: "",
         empName: `${emp.firstName} ${emp.surname}`.trim(),
         fhName: emp.fatherName || "",
-        motherName: "",
+        motherName: "", 
         status: emp.status || "",
         dob: emp.dateOfBirth ? emp.dateOfBirth.toISOString().split("T")[0] : "",
         doj: emp.joiningDate ? emp.joiningDate.toISOString().split("T")[0] : "",
         gender: emp.gender || "",
         mobile: emp.mobile || "",
-        jobType: "",
-        bankCode: "",
-        payMode: "",
+        jobType: "", bankCode: "", payMode: "", 
         accountNo: emp.accountNumber || "",
         accHolderName: emp.bankName || "",
         ifscCode: emp.ifsc || "",
-        weeklyOff: "",
+        weeklyOff: "", 
         aadhaarNo: emp.aadhaar || "",
-        pfNumber: "",
+        pfNumber: "", 
         esiNo: emp.esic || "",
         panNo: emp.pan || "",
-        aadhaarStateCode: "",
+        aadhaarStateCode: "", 
         uanNo: emp.uan || "",
-        pfDed: "",
-        esiDed: "",
-        lwfDed: "",
-        ptaxDed: "",
-        clientCode: "",
-        unitCode: "",
-        deptCode: "",
-        designationCode: "",
-        empCatCode: "",
+        pfDed: "", esiDed: "", lwfDed: "", ptaxDed: "", clientCode: "", 
+        unitCode: "", deptCode: "", designationCode: "", empCatCode: "", 
         localAdd1: emp.currentAddress || "",
         localAdd2: emp.city ? `${emp.city}, ${emp.state}` : "",
         localPincode: emp.pinCode || "",
         permanentAdd1: emp.permanentAddress || "",
         permanentAdd2: emp.city ? `${emp.city}, ${emp.state}` : "",
         permanentPincode: emp.pinCode || "",
-        compId: "",
-        error: "",
-        additionalCol1: "Processed",
+        compId: "", error: "", 
+        additionalCol1: "Processed" 
+      };
+
+      // Map dynamic document links to the row
+      DOC_TYPES.forEach(dt => {
+        rowData[`doc_${dt.type}`] = getDocHyperlink(emp.documents, dt.type, dt.label);
       });
+
+      worksheet.addRow(rowData);
     });
 
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer as ArrayBuffer);
   }
-  static async generateEmployeePdf(employeeId: string): Promise<Buffer> {
+
+  static async generateEmployeePdf(employeeId: string, baseUrl: string): Promise<Buffer> {
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
       include: { documents: true },
@@ -245,31 +237,19 @@ export class ReportService {
         doc.moveDown();
 
         // Status & Code
-        doc
-          .fontSize(12)
-          .font("Helvetica-Bold")
-          .text(
-            `Employee Code: ${employee.employeeCode || "PENDING ASSIGNMENT"}`,
-          )
+        doc.fontSize(12).font("Helvetica-Bold")
+          .text(`Employee Code: ${employee.employeeCode || "PENDING ASSIGNMENT"}`)
           .text(`Status: ${employee.status}`);
         doc.moveDown();
 
-        // Helper function for sections
         const addSection = (title: string, data: Record<string, any>) => {
-          doc
-            .fontSize(14)
-            .font("Helvetica-Bold")
-            .fillColor("#2563eb")
-            .text(title);
+          doc.fontSize(14).font("Helvetica-Bold").fillColor("#2563eb").text(title);
           doc.moveDown(0.5);
           doc.fontSize(10).font("Helvetica").fillColor("#000000");
 
           Object.entries(data).forEach(([key, value]) => {
-            doc
-              .font("Helvetica-Bold")
-              .text(`${key}: `, { continued: true })
-              .font("Helvetica")
-              .text(`${value || "N/A"}`);
+            doc.font("Helvetica-Bold").text(`${key}: `, { continued: true })
+               .font("Helvetica").text(`${value || "N/A"}`);
           });
           doc.moveDown();
         };
@@ -314,23 +294,27 @@ export class ReportService {
         });
 
         // Documents Section
-        doc
-          .fontSize(14)
-          .font("Helvetica-Bold")
-          .fillColor("#2563eb")
-          .text("Uploaded Documents");
+        doc.fontSize(14).font("Helvetica-Bold").fillColor("#2563eb").text("Uploaded Documents");
         doc.moveDown(0.5);
-        doc.fontSize(10).font("Helvetica").fillColor("#000000");
 
-        if (employee.documents.length === 0) {
-          doc.text("No documents uploaded.");
-        } else {
-          employee.documents.forEach((docItem, index) => {
-            doc.text(
-              `${index + 1}. ${docItem.type} - (${docItem.originalFilename})`,
-            );
-          });
-        }
+        DOC_TYPES.forEach((dt, index) => {
+          const docItem = employee.documents.find(d => d.type === dt.type);
+          
+          doc.fontSize(10).font("Helvetica").fillColor("#000000")
+             .text(`${index + 1}. ${dt.label}: `, { continued: true });
+
+          if (docItem) {
+            const url = `${baseUrl}/document/${docItem.id}/download`;
+            doc.fillColor("#2563eb").text(`View ${dt.label}`, {
+              link: url,
+              underline: true
+            });
+          } else {
+            doc.fillColor("#6b7280").text("Not Uploaded", {
+              underline: false
+            });
+          }
+        });
 
         doc.end();
       } catch (error) {
