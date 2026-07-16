@@ -30,3 +30,14 @@ export const downloadPdf = async (req: Request, res: Response): Promise<void> =>
     res.status(statusCode).json({ success: false, error: error.message });
   }
 };
+
+export const getReportEmployees = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const filters = req.query;
+    const employees = await ReportService.getFilteredEmployees(filters);
+    
+    res.status(200).json({ success: true, data: employees });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: "Failed to fetch report results." });
+  }
+};

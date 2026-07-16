@@ -170,6 +170,38 @@ export class ReportService {
     return Buffer.from(buffer as ArrayBuffer);
   }
 
+  static async getFilteredEmployees(filters: any) {
+    const where: any = {};
+
+    if (filters.joiningDate) {
+      const dStart = new Date(filters.joiningDate);
+      const dEnd = new Date(dStart);
+      dEnd.setDate(dEnd.getDate() + 1);
+      where.joiningDate = { gte: dStart, lt: dEnd };
+    } else if (filters.month || filters.year) {
+      const currentYear = new Date().getFullYear();
+      const targetYear = filters.year ? parseInt(filters.year, 10) : currentYear;
+      const targetMonth = filters.month ? parseInt(filters.month, 10) - 1 : 0;
+      
+      const startDate = new Date(targetYear, filters.month ? targetMonth : 0, 1);
+      const endDate = new Date(targetYear, filters.month ? targetMonth + 1 : 12, 1);
+      
+      where.joiningDate = { gte: startDate, lt: endDate };
+    }
+
+    return prisma.employee.findMany({
+      where,
+      orderBy: { joiningDate: "desc" },
+      select: {
+        id: true,
+        firstName: true,
+        surname: true,
+        employeeCode: true,
+        joiningDate: true,
+      }
+    });
+  }
+
   static async generateEmployeePdf(employeeId: string): Promise<Buffer> {
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
