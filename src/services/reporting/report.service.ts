@@ -2,12 +2,21 @@ import { prisma } from "../../config/prisma";
 import ExcelJS from "exceljs";
 import PDFDocument from "pdfkit";
 
+export interface ReportFilters {
+  code?: string;
+  name?: string;
+  joiningDate?: string;
+  month?: string;
+  year?: string;
+}
+
 export class ReportService {
-  static async exportExcel(filters: {
-    code?: string;
-    name?: string;
-    joiningDate?: string;
-  }): Promise<Buffer> {
+  static async exportExcel(
+    filters: ReportFilters,
+    dynamicColumns: { header: string; key: string; width?: number }[] = [
+      { header: "ADDITIONAL COLUMN 1", key: "additionalCol1", width: 25 } // Client requested additional column
+    ]
+  ): Promise<Buffer> {
     const where: any = {};
 
     if (filters.code) {
@@ -20,9 +29,7 @@ export class ReportService {
     if (filters.name) {
       const nameTrimmed = filters.name.trim();
       const spaceIdx = nameTrimmed.indexOf(" ");
-
       if (spaceIdx !== -1) {
-        // If there's a space, assume they are searching [First Name] [Surname]
         const firstPart = nameTrimmed.slice(0, spaceIdx);
         const secondPart = nameTrimmed.slice(spaceIdx + 1);
         where.AND = [
@@ -30,7 +37,6 @@ export class ReportService {
           { surname: { contains: secondPart, mode: "insensitive" } },
         ];
       } else {
-        // If a single word, check if it matches either firstName OR surname
         where.OR = [
           { firstName: { contains: nameTrimmed, mode: "insensitive" } },
           { surname: { contains: nameTrimmed, mode: "insensitive" } },
@@ -38,16 +44,21 @@ export class ReportService {
       }
     }
 
+    // Process exact date OR Month/Year combination safely
     if (filters.joiningDate) {
-      // Create exact day boundaries since the frontend sends YYYY-MM-DD
       const dStart = new Date(filters.joiningDate);
       const dEnd = new Date(dStart);
       dEnd.setDate(dEnd.getDate() + 1);
-
-      where.joiningDate = {
-        gte: dStart,
-        lt: dEnd,
-      };
+      where.joiningDate = { gte: dStart, lt: dEnd };
+    } else if (filters.month || filters.year) {
+      const currentYear = new Date().getFullYear();
+      const targetYear = filters.year ? parseInt(filters.year, 10) : currentYear;
+      const targetMonth = filters.month ? parseInt(filters.month, 10) - 1 : 0;
+      
+      const startDate = new Date(targetYear, filters.month ? targetMonth : 0, 1);
+      const endDate = new Date(targetYear, filters.month ? targetMonth + 1 : 12, 1);
+      
+      where.joiningDate = { gte: startDate, lt: endDate };
     }
 
     const employees = await prisma.employee.findMany({
@@ -58,58 +69,104 @@ export class ReportService {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Employees");
 
-    worksheet.columns = [
-      { header: "Employee Code", key: "code", width: 20 },
-      { header: "Employee Name", key: "name", width: 30 },
-      { header: "Father's Name", key: "fatherName", width: 25 },
-      { header: "Mobile Number", key: "mobile", width: 15 },
-      { header: "Date of Joining", key: "joiningDate", width: 15 },
-      { header: "Unit / Site", key: "unit", width: 20 },
-      { header: "Gender", key: "gender", width: 10 },
-      { header: "Date of Birth", key: "dateOfBirth", width: 15 },
-      { header: "Blood Group", key: "bloodGroup", width: 15 },
-      { header: "Aadhaar Number", key: "aadhaar", width: 20 },
-      { header: "PAN Number", key: "pan", width: 15 },
-      { header: "UAN Number", key: "uan", width: 20 },
-      { header: "ESIC Number", key: "esic", width: 20 },
-      { header: "Bank Name", key: "bankName", width: 25 },
-      { header: "Account Number", key: "accountNumber", width: 20 },
-      { header: "IFSC Code", key: "ifsc", width: 15 },
-      { header: "Branch", key: "branch", width: 20 },
-      { header: "MICR Code", key: "micr", width: 15 },
+    // Exact Template supplied by client
+    const baseColumns = [
+      { header: "EMPCODE", key: "empCode", width: 15 },
+      { header: "APPLICATION NO", key: "applicationNo", width: 20 },
+      { header: "CLIENT EMP ID", key: "clientEmpId", width: 15 },
+      { header: "EMP NAME", key: "empName", width: 30 },
+      { header: "F/H NAME", key: "fhName", width: 30 },
+      { header: "MOTHER NAME", key: "motherName", width: 20 },
+      { header: "STATUS", key: "status", width: 15 },
+      { header: "DOB", key: "dob", width: 15 },
+      { header: "DOJ", key: "doj", width: 15 },
+      { header: "GENDER", key: "gender", width: 10 },
+      { header: "MOBILE", key: "mobile", width: 15 },
+      { header: "JOB TYPE", key: "jobType", width: 15 },
+      { header: "BANK CODE", key: "bankCode", width: 15 },
+      { header: "PAY MODE", key: "payMode", width: 15 },
+      { header: "ACCOUNT NO", key: "accountNo", width: 20 },
+      { header: "ACC HOLDER NAME", key: "accHolderName", width: 30 },
+      { header: "IFSC CODE", key: "ifscCode", width: 15 },
+      { header: "WEEKLY OFF", key: "weeklyOff", width: 15 },
+      { header: "AADHAAR NO", key: "aadhaarNo", width: 20 },
+      { header: "PF NUMBER", key: "pfNumber", width: 20 },
+      { header: "ESI NO", key: "esiNo", width: 20 },
+      { header: "PAN NO", key: "panNo", width: 15 },
+      { header: "AADHAAR STATE CODE", key: "aadhaarStateCode", width: 15 },
+      { header: "UAN NO", key: "uanNo", width: 20 },
+      { header: "PF DED", key: "pfDed", width: 10 },
+      { header: "ESI DED", key: "esiDed", width: 10 },
+      { header: "LWF DED", key: "lwfDed", width: 10 },
+      { header: "PTAX DED", key: "ptaxDed", width: 10 },
+      { header: "CLIENT CODE", key: "clientCode", width: 15 },
+      { header: "UNIT CODE", key: "unitCode", width: 15 },
+      { header: "DEPT CODE", key: "deptCode", width: 15 },
+      { header: "DESIGNATION CODE", key: "designationCode", width: 20 },
+      { header: "EMP CAT CODE", key: "empCatCode", width: 15 },
+      { header: "LocalAdd1", key: "localAdd1", width: 25 },
+      { header: "LocalAdd2", key: "localAdd2", width: 25 },
+      { header: "LocalPincode", key: "localPincode", width: 15 },
+      { header: "PermanentAdd1", key: "permanentAdd1", width: 25 },
+      { header: "PermanentAdd2", key: "permanentAdd2", width: 25 },
+      { header: "PermanentPincode", key: "permanentPincode", width: 15 },
+      { header: "CompID", key: "compId", width: 15 },
+      { header: "Error", key: "error", width: 10 }
     ];
 
+    // Merge base columns with dynamic columns
+    worksheet.columns = [...baseColumns, ...dynamicColumns];
     worksheet.getRow(1).font = { bold: true };
 
     employees.forEach((emp) => {
       worksheet.addRow({
-        code: emp.employeeCode || "",
-        name: `${emp.firstName} ${emp.surname}`.trim(),
-        fatherName: emp.fatherName || "",
-        mobile: emp.mobile || "",
-        joiningDate: emp.joiningDate
-          ? emp.joiningDate.toISOString().split("T")[0]
-          : "",
-        unit: "", // Unit is currently not in the DB schema; left blank as per requirements
+        empCode: emp.employeeCode || "",
+        applicationNo: emp.id || "",
+        clientEmpId: "",
+        empName: `${emp.firstName} ${emp.surname}`.trim(),
+        fhName: emp.fatherName || "",
+        motherName: "", 
+        status: emp.status || "",
+        dob: emp.dateOfBirth ? emp.dateOfBirth.toISOString().split("T")[0] : "",
+        doj: emp.joiningDate ? emp.joiningDate.toISOString().split("T")[0] : "",
         gender: emp.gender || "",
-        dateOfBirth: emp.dateOfBirth
-          ? emp.dateOfBirth.toISOString().split("T")[0]
-          : "",
-        bloodGroup: emp.bloodGroup || "",
-        aadhaar: emp.aadhaar || "",
-        pan: emp.pan || "",
-        uan: emp.uan || "",
-        esic: emp.esic || "",
-        bankName: emp.bankName || "",
-        accountNumber: emp.accountNumber || "",
-        ifsc: emp.ifsc || "",
-        branch: emp.branch || "",
-        micr: emp.micr || "",
+        mobile: emp.mobile || "",
+        jobType: "", 
+        bankCode: "", 
+        payMode: "", 
+        accountNo: emp.accountNumber || "",
+        accHolderName: emp.bankName || "",
+        ifscCode: emp.ifsc || "",
+        weeklyOff: "", 
+        aadhaarNo: emp.aadhaar || "",
+        pfNumber: "", 
+        esiNo: emp.esic || "",
+        panNo: emp.pan || "",
+        aadhaarStateCode: "", 
+        uanNo: emp.uan || "",
+        pfDed: "", 
+        esiDed: "", 
+        lwfDed: "", 
+        ptaxDed: "", 
+        clientCode: "", 
+        unitCode: "", 
+        deptCode: "", 
+        designationCode: "", 
+        empCatCode: "", 
+        localAdd1: emp.currentAddress || "",
+        localAdd2: emp.city ? `${emp.city}, ${emp.state}` : "",
+        localPincode: emp.pinCode || "",
+        permanentAdd1: emp.permanentAddress || "",
+        permanentAdd2: emp.city ? `${emp.city}, ${emp.state}` : "",
+        permanentPincode: emp.pinCode || "",
+        compId: "", 
+        error: "", 
+        // Example handling of additional injected columns 
+        additionalCol1: "Processed" 
       });
     });
 
     const buffer = await workbook.xlsx.writeBuffer();
-
     return Buffer.from(buffer as ArrayBuffer);
   }
 
