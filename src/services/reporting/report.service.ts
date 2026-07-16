@@ -21,30 +21,17 @@ export class ReportService {
       where.joiningDate = { gte: dStart, lt: dEnd };
     } else if (filters.month || filters.year) {
       const currentYear = new Date().getFullYear();
-      const targetYear = filters.year
-        ? parseInt(filters.year, 10)
-        : currentYear;
+      const targetYear = filters.year ? parseInt(filters.year, 10) : currentYear;
       const targetMonth = filters.month ? parseInt(filters.month, 10) - 1 : 0;
-
-      const startDate = new Date(
-        targetYear,
-        filters.month ? targetMonth : 0,
-        1,
-      );
-      const endDate = new Date(
-        targetYear,
-        filters.month ? targetMonth + 1 : 12,
-        1,
-      );
-
+      
+      const startDate = new Date(targetYear, filters.month ? targetMonth : 0, 1);
+      const endDate = new Date(targetYear, filters.month ? targetMonth + 1 : 12, 1);
+      
       where.joiningDate = { gte: startDate, lt: endDate };
     }
 
     if (filters.code) {
-      where.employeeCode = {
-        contains: filters.code.trim(),
-        mode: "insensitive",
-      };
+      where.employeeCode = { contains: filters.code.trim(), mode: "insensitive" };
     }
 
     return prisma.employee.findMany({
@@ -56,7 +43,11 @@ export class ReportService {
         surname: true,
         employeeCode: true,
         joiningDate: true,
-      },
+        // Include minimal document metadata for the Admin UI list
+        documents: {
+          select: { id: true, type: true }
+        }
+      }
     });
   }
 
@@ -74,7 +65,11 @@ export class ReportService {
         joiningDate: true,
         uploadedAt: true,
         selfieFilename: true,
-      },
+        // Include minimal document metadata for Mobile UI detail
+        documents: {
+          select: { id: true, type: true }
+        }
+      }
     });
 
     if (!employee) throw new Error("Employee not found in reports database.");

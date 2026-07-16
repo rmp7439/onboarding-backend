@@ -3,6 +3,10 @@ import {
   ReportFilters,
   ReportService,
 } from "../services/reporting/report.service";
+import { prisma } from "../config/prisma";
+import PDFDocument from "pdfkit";
+import path from "path";
+import fs from "fs";
 
 const firstQueryValue = (value: unknown): string | undefined => {
   if (typeof value === "string") {
@@ -100,5 +104,47 @@ export const getReportEmployeeDetail = async (req: Request, res: Response): Prom
     });
   } catch (error: any) {
     res.status(404).json({ success: false, error: error.message });
+  }
+};
+
+export const downloadReportDocument = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = String(req.params.docId);
+    const document = await prisma.document.findUnique({ where: { id } });
+
+    if (!document) {
+      res.status(404).json({ success: false, error: 'Document not found' });
+      return;
+    }
+
+    const baseDir = document.mimeType === 'application/pdf' ? 'pdf' : 'jpg';
+    const documentWithStoredFilename = document as typeof document & {
+      storedFilename: string;
+    };
+    const filePath = path.join(__dirname, `../../uploads/${baseDir}`, documentWithStoredFilename.storedFilename);
+
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ success: false, error: 'File not found on server' });
+      return;
+    }
+
+    // Reuse existing stream logic from download.controller.ts natively
+    if (document.mimeType.startsWith('image/')) {
+      const pdfFilename = document.originalFilename.replace(/\.[^/.]+$/, "") + ".pdf";
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${pdfFilename}"`);
+
+      const doc = new PDFDocument({ margin: 0, size: 'A4' });
+      doc.pipe(res);
+      doc.image(filePath, 0, 0, { fit: [595.28, 841.89], align: 'center', valign: 'center' });
+      doc.end();
+    } else {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${document.originalFilename}"`);
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    }
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
   }
 };

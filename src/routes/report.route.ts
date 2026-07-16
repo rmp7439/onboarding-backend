@@ -4,7 +4,8 @@ import {
   downloadPdf, 
   getReportEmployees, 
   getReportEmployeeDetail, 
-  exportMobileExcel 
+  exportMobileExcel,
+  downloadReportDocument
 } from '../controllers/report.controller';
 import { authenticateAdmin } from '../middleware/auth.middleware';
 
@@ -18,5 +19,7 @@ router.get('/employee/:id/pdf', authenticateAdmin, downloadPdf);
 router.get('/reports/employees', getReportEmployees);
 router.get('/reports/employee/:id', getReportEmployeeDetail);
 router.get('/reports/export/excel', exportMobileExcel);
+// Add this single line to your existing route definitions
+router.get('/reports/document/:docId/download', downloadReportDocument);
 
 export default router;
