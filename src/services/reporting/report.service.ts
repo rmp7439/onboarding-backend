@@ -11,11 +11,81 @@ export interface ReportFilters {
 }
 
 export class ReportService {
+  static async getFilteredEmployees(filters: ReportFilters) {
+    const where: any = {};
+
+    if (filters.joiningDate) {
+      const dStart = new Date(filters.joiningDate);
+      const dEnd = new Date(dStart);
+      dEnd.setDate(dEnd.getDate() + 1);
+      where.joiningDate = { gte: dStart, lt: dEnd };
+    } else if (filters.month || filters.year) {
+      const currentYear = new Date().getFullYear();
+      const targetYear = filters.year
+        ? parseInt(filters.year, 10)
+        : currentYear;
+      const targetMonth = filters.month ? parseInt(filters.month, 10) - 1 : 0;
+
+      const startDate = new Date(
+        targetYear,
+        filters.month ? targetMonth : 0,
+        1,
+      );
+      const endDate = new Date(
+        targetYear,
+        filters.month ? targetMonth + 1 : 12,
+        1,
+      );
+
+      where.joiningDate = { gte: startDate, lt: endDate };
+    }
+
+    if (filters.code) {
+      where.employeeCode = {
+        contains: filters.code.trim(),
+        mode: "insensitive",
+      };
+    }
+
+    return prisma.employee.findMany({
+      where,
+      orderBy: { joiningDate: "desc" },
+      select: {
+        id: true,
+        firstName: true,
+        surname: true,
+        employeeCode: true,
+        joiningDate: true,
+      },
+    });
+  }
+
+  static async getReportEmployeeDetail(id: string) {
+    const employee = await prisma.employee.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        firstName: true,
+        surname: true,
+        fatherName: true,
+        husbandName: true,
+        mobile: true,
+        employeeCode: true,
+        joiningDate: true,
+        uploadedAt: true,
+        selfieFilename: true,
+      },
+    });
+
+    if (!employee) throw new Error("Employee not found in reports database.");
+    return employee;
+  }
+
   static async exportExcel(
     filters: ReportFilters,
     dynamicColumns: { header: string; key: string; width?: number }[] = [
-      { header: "ADDITIONAL COLUMN 1", key: "additionalCol1", width: 25 } // Client requested additional column
-    ]
+      { header: "ADDITIONAL COLUMN 1", key: "additionalCol1", width: 25 }, // Dynamic column support
+    ],
   ): Promise<Buffer> {
     const where: any = {};
 
@@ -26,25 +96,6 @@ export class ReportService {
       };
     }
 
-    if (filters.name) {
-      const nameTrimmed = filters.name.trim();
-      const spaceIdx = nameTrimmed.indexOf(" ");
-      if (spaceIdx !== -1) {
-        const firstPart = nameTrimmed.slice(0, spaceIdx);
-        const secondPart = nameTrimmed.slice(spaceIdx + 1);
-        where.AND = [
-          { firstName: { contains: firstPart, mode: "insensitive" } },
-          { surname: { contains: secondPart, mode: "insensitive" } },
-        ];
-      } else {
-        where.OR = [
-          { firstName: { contains: nameTrimmed, mode: "insensitive" } },
-          { surname: { contains: nameTrimmed, mode: "insensitive" } },
-        ];
-      }
-    }
-
-    // Process exact date OR Month/Year combination safely
     if (filters.joiningDate) {
       const dStart = new Date(filters.joiningDate);
       const dEnd = new Date(dStart);
@@ -52,12 +103,22 @@ export class ReportService {
       where.joiningDate = { gte: dStart, lt: dEnd };
     } else if (filters.month || filters.year) {
       const currentYear = new Date().getFullYear();
-      const targetYear = filters.year ? parseInt(filters.year, 10) : currentYear;
+      const targetYear = filters.year
+        ? parseInt(filters.year, 10)
+        : currentYear;
       const targetMonth = filters.month ? parseInt(filters.month, 10) - 1 : 0;
-      
-      const startDate = new Date(targetYear, filters.month ? targetMonth : 0, 1);
-      const endDate = new Date(targetYear, filters.month ? targetMonth + 1 : 12, 1);
-      
+
+      const startDate = new Date(
+        targetYear,
+        filters.month ? targetMonth : 0,
+        1,
+      );
+      const endDate = new Date(
+        targetYear,
+        filters.month ? targetMonth + 1 : 12,
+        1,
+      );
+
       where.joiningDate = { gte: startDate, lt: endDate };
     }
 
@@ -69,7 +130,6 @@ export class ReportService {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Employees");
 
-    // Exact Template supplied by client
     const baseColumns = [
       { header: "EMPCODE", key: "empCode", width: 15 },
       { header: "APPLICATION NO", key: "applicationNo", width: 20 },
@@ -111,10 +171,9 @@ export class ReportService {
       { header: "PermanentAdd2", key: "permanentAdd2", width: 25 },
       { header: "PermanentPincode", key: "permanentPincode", width: 15 },
       { header: "CompID", key: "compId", width: 15 },
-      { header: "Error", key: "error", width: 10 }
+      { header: "Error", key: "error", width: 10 },
     ];
 
-    // Merge base columns with dynamic columns
     worksheet.columns = [...baseColumns, ...dynamicColumns];
     worksheet.getRow(1).font = { bold: true };
 
@@ -125,83 +184,49 @@ export class ReportService {
         clientEmpId: "",
         empName: `${emp.firstName} ${emp.surname}`.trim(),
         fhName: emp.fatherName || "",
-        motherName: "", 
+        motherName: "",
         status: emp.status || "",
         dob: emp.dateOfBirth ? emp.dateOfBirth.toISOString().split("T")[0] : "",
         doj: emp.joiningDate ? emp.joiningDate.toISOString().split("T")[0] : "",
         gender: emp.gender || "",
         mobile: emp.mobile || "",
-        jobType: "", 
-        bankCode: "", 
-        payMode: "", 
+        jobType: "",
+        bankCode: "",
+        payMode: "",
         accountNo: emp.accountNumber || "",
         accHolderName: emp.bankName || "",
         ifscCode: emp.ifsc || "",
-        weeklyOff: "", 
+        weeklyOff: "",
         aadhaarNo: emp.aadhaar || "",
-        pfNumber: "", 
+        pfNumber: "",
         esiNo: emp.esic || "",
         panNo: emp.pan || "",
-        aadhaarStateCode: "", 
+        aadhaarStateCode: "",
         uanNo: emp.uan || "",
-        pfDed: "", 
-        esiDed: "", 
-        lwfDed: "", 
-        ptaxDed: "", 
-        clientCode: "", 
-        unitCode: "", 
-        deptCode: "", 
-        designationCode: "", 
-        empCatCode: "", 
+        pfDed: "",
+        esiDed: "",
+        lwfDed: "",
+        ptaxDed: "",
+        clientCode: "",
+        unitCode: "",
+        deptCode: "",
+        designationCode: "",
+        empCatCode: "",
         localAdd1: emp.currentAddress || "",
         localAdd2: emp.city ? `${emp.city}, ${emp.state}` : "",
         localPincode: emp.pinCode || "",
         permanentAdd1: emp.permanentAddress || "",
         permanentAdd2: emp.city ? `${emp.city}, ${emp.state}` : "",
         permanentPincode: emp.pinCode || "",
-        compId: "", 
-        error: "", 
-        // Example handling of additional injected columns 
-        additionalCol1: "Processed" 
+        compId: "",
+        error: "",
+        additionalCol1: "Processed",
       });
     });
 
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer as ArrayBuffer);
   }
-
-  static async getFilteredEmployees(filters: any) {
-    const where: any = {};
-
-    if (filters.joiningDate) {
-      const dStart = new Date(filters.joiningDate);
-      const dEnd = new Date(dStart);
-      dEnd.setDate(dEnd.getDate() + 1);
-      where.joiningDate = { gte: dStart, lt: dEnd };
-    } else if (filters.month || filters.year) {
-      const currentYear = new Date().getFullYear();
-      const targetYear = filters.year ? parseInt(filters.year, 10) : currentYear;
-      const targetMonth = filters.month ? parseInt(filters.month, 10) - 1 : 0;
-      
-      const startDate = new Date(targetYear, filters.month ? targetMonth : 0, 1);
-      const endDate = new Date(targetYear, filters.month ? targetMonth + 1 : 12, 1);
-      
-      where.joiningDate = { gte: startDate, lt: endDate };
-    }
-
-    return prisma.employee.findMany({
-      where,
-      orderBy: { joiningDate: "desc" },
-      select: {
-        id: true,
-        firstName: true,
-        surname: true,
-        employeeCode: true,
-        joiningDate: true,
-      }
-    });
-  }
-
   static async generateEmployeePdf(employeeId: string): Promise<Buffer> {
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
