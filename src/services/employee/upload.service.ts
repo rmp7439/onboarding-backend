@@ -109,6 +109,7 @@ export class UploadService {
       const cloudinaryResult = await cloudinary.uploader.upload(
         localProcessedPath,
         {
+          resource_type: "raw",
           folder: "employee_documents",
           public_id: `doc_${employeeId}_${type}_${Date.now()}`,
         },
