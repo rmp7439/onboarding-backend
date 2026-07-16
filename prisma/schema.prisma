@@ -108,16 +108,20 @@ model Admin {
 }
 
 model Document {
-  id String @id @default(cuid())
-  employeeId String
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  type DocumentType
-  storedFilename String
+  id               String   @id @default(cuid())
+  employeeId       String
+  type             DocumentType
+  storedFilename   String
   originalFilename String
-  mimeType String
-  fileSize Int
-  uploadedAt DateTime @default(now())
-  fileExtension String
+  mimeType         String
+  fileSize         Int
+  uploadedAt       DateTime @default(now())
+  fileExtension    String
+
+  cloudinaryUrl      String?
+  cloudinaryPublicId String?
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([employeeId])
 }

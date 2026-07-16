@@ -60,6 +60,7 @@ export class ReportService {
       select: {
         id: true, firstName: true, surname: true, fatherName: true, husbandName: true,
         mobile: true, employeeCode: true, joiningDate: true, uploadedAt: true, selfieFilename: true,
+        selfieCloudinaryUrl: true, selfieCloudinaryId: true,
         documents: { select: { id: true, type: true } }
       }
     });
