@@ -46,14 +46,12 @@ model Employee {
 
   status EmployeeStatus @default(PENDING)
 
-  // Personal
   firstName   String
   surname     String
   fatherName  String
   husbandName String?
 
   gender Gender
-
   bloodGroup BloodGroup
 
   dateOfBirth DateTime
@@ -61,35 +59,35 @@ model Employee {
 
   mobile String @unique
 
-  // Identity
   aadhaar String  @unique
   pan     String  @unique
   uan     String?
   esic    String?
 
-  // Address
   permanentAddress String
   currentAddress   String
   city             String
   state            String
   pinCode          String
 
-  // Bank
   bankName      String
   accountNumber String
   ifsc          String
   branch        String
   micr          String
 
-  // Emergency
   emergencyName     String
   emergencyRelation String
   emergencyPhone    String
 
-  // Selfie
+  // Legacy Local Storage (Kept exclusively for backward compatibility)
   selfieFilename String?
   selfieMimeType String?
   selfieSize     Int?
+
+  // NEW: Cloudinary Storage
+  selfieCloudinaryUrl String?
+  selfieCloudinaryId  String?
 
   documents Document[]
 
@@ -111,23 +109,14 @@ model Admin {
 
 model Document {
   id String @id @default(cuid())
-
   employeeId String
-
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-
   type DocumentType
-
   storedFilename String
-
   originalFilename String
-
   mimeType String
-
   fileSize Int
-
   uploadedAt DateTime @default(now())
-
   fileExtension String
 
   @@index([employeeId])

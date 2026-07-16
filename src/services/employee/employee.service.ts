@@ -1,18 +1,11 @@
 import { prisma } from '../../config/prisma';
-import { Employee, EmployeeStatus, Prisma} from '@prisma/client';
+import { Employee, EmployeeStatus, Prisma } from '@prisma/client';
 
 export class EmployeeService {
-  /**
-   * Registers a new employee, ensuring uniqueness for Aadhaar, PAN, and Mobile.
-   */
   static async registerEmployee(data: Prisma.EmployeeCreateInput): Promise<Employee> {
     const existingEmployee = await prisma.employee.findFirst({
       where: {
-        OR: [
-          { mobile: data.mobile },
-          { aadhaar: data.aadhaar },
-          { pan: data.pan }
-        ]
+        OR: [{ mobile: data.mobile }, { aadhaar: data.aadhaar }, { pan: data.pan }]
       }
     });
 
@@ -36,14 +29,9 @@ export class EmployeeService {
     });
   }
 
-  /**
-   * Retrieves an employee profile with only non-sensitive data for the mobile app.
-   */
   static async getEmployeeProfile(id: string) {
-    // Reuse existing logic to handle existence checks and basic fetch
     const employee = await this.getEmployeeById(id);
 
-    // Return only the safe, requested fields
     return {
       id: employee.id,
       firstName: employee.firstName,
@@ -54,14 +42,12 @@ export class EmployeeService {
       joiningDate: employee.joiningDate,
       gender: employee.gender,
       bloodGroup: employee.bloodGroup,
-      selfieFilename: employee.selfieFilename, // Needed to construct the URL in the controller
+      selfieFilename: employee.selfieFilename, 
+      selfieCloudinaryUrl: employee.selfieCloudinaryUrl,
+      selfieCloudinaryId: employee.selfieCloudinaryId,
     };
   }
 
-  /**
-   * Searches employees based on a text query.
-   * Only returns safe, non-sensitive fields for the mobile app list view.
-   */
   static async searchEmployees(query: string) {
     const employees = await prisma.employee.findMany({
       where: {
@@ -70,14 +56,13 @@ export class EmployeeService {
           { surname: { contains: query, mode: 'insensitive' } },
           { employeeCode: { contains: query, mode: 'insensitive' } },
           { mobile: { contains: query } },
-          { aadhaar: { contains: query } } // Allow searching by Aadhaar
+          { aadhaar: { contains: query } } 
         ]
       },
-      take: 20, // Limit results for performance
+      take: 20, 
       orderBy: { uploadedAt: 'desc' }
     });
 
-    // Strip sensitive info before returning to the mobile app
     return employees.map(emp => ({
       id: emp.id,
       firstName: emp.firstName,
@@ -89,49 +74,27 @@ export class EmployeeService {
   }
 
   static async getAllEmployees(): Promise<Employee[]> {
-    return prisma.employee.findMany({
-      orderBy: { uploadedAt: 'desc' }
-    });
+    return prisma.employee.findMany({ orderBy: { uploadedAt: 'desc' } });
   }
 
   static async getEmployeeById(id: string): Promise<Employee> {
     const employee = await prisma.employee.findUnique({
       where: { id },
-      include: { documents: true } // Assuming you want to see documents when viewing details
+      include: { documents: true }
     });
-
-    if (!employee) {
-      throw new Error('Employee not found.');
-    }
+    if (!employee) throw new Error('Employee not found.');
     return employee;
   }
 
   static async updateEmployeeStatus(id: string, status: EmployeeStatus): Promise<Employee> {
-    // Verify existence first
     await this.getEmployeeById(id);
-
-    return prisma.employee.update({
-      where: { id },
-      data: { status }
-    });
+    return prisma.employee.update({ where: { id }, data: { status } });
   }
 
   static async updateEmployeeCode(id: string, employeeCode: string): Promise<Employee> {
-    // Verify existence first
     await this.getEmployeeById(id);
-
-    // Check if the code is already assigned to someone else
-    const codeExists = await prisma.employee.findUnique({
-      where: { employeeCode }
-    });
-
-    if (codeExists && codeExists.id !== id) {
-      throw new Error('Employee code is already in use by another employee.');
-    }
-
-    return prisma.employee.update({
-      where: { id },
-      data: { employeeCode }
-    });
+    const codeExists = await prisma.employee.findUnique({ where: { employeeCode } });
+    if (codeExists && codeExists.id !== id) throw new Error('Employee code is already in use by another employee.');
+    return prisma.employee.update({ where: { id }, data: { employeeCode } });
   }
 }

@@ -64,16 +64,13 @@ export const getReportEmployees = async (req: Request, res: Response): Promise<v
 export const getReportEmployeeDetail = async (req: Request, res: Response): Promise<void> => {
   try {
     const employee = await ReportService.getReportEmployeeDetail(String(req.params.id));
-    
     const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const employeeWithSelfie = employee as typeof employee & {
-      selfieFilename?: string | null;
-    };
-    const selfieUrl = employeeWithSelfie.selfieFilename 
-      ? `${baseUrl}/uploads/jpg/${employeeWithSelfie.selfieFilename}` 
-      : null;
+    
+    // Cloudinary preferred; legacy local format as fallback
+    const selfieUrl = employee.selfieCloudinaryUrl 
+      || (employee.selfieFilename ? `${baseUrl}/uploads/jpg/${employee.selfieFilename}` : null);
 
-    const { selfieFilename, ...safeProfile } = employeeWithSelfie;
+    const { selfieFilename, selfieCloudinaryUrl, selfieCloudinaryId, ...safeProfile } = employee as any;
 
     res.status(200).json({ 
       success: true, 

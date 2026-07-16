@@ -1,6 +1,9 @@
 import { prisma } from '../../config/prisma';
 import { DocumentType, Employee, Document } from '@prisma/client';
 import { DocumentProcessorService } from '../processing/document-processor.service';
+import cloudinary from '../../config/cloudinary';
+import { cleanupFile } from '../../utils/fileCleanup';
+import path from 'path';
 
 export class UploadService {
   
@@ -8,21 +11,44 @@ export class UploadService {
     const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
     if (!employee) throw new Error('Employee not found.');
 
-    // Intercept the selfie upload and route it through the new formatting logic
+    // 1. Process local image (crop & format)
     const processedMetadata = await DocumentProcessorService.processSelfie(
       file.path, 
       file.filename, 
       file.mimetype
     );
 
-    return prisma.employee.update({
-      where: { id: employeeId },
-      data: {
-        selfieFilename: processedMetadata.filename,
-        selfieMimeType: processedMetadata.mimeType,
-        selfieSize: processedMetadata.size,
-      }
-    });
+    const localProcessedPath = path.join(__dirname, '../../../uploads/jpg', processedMetadata.filename);
+
+    try {
+      // 2. Upload to Cloudinary
+      const cloudinaryResult = await cloudinary.uploader.upload(localProcessedPath, {
+        folder: 'employee_selfies',
+        public_id: `selfie_${employeeId}_${Date.now()}`,
+      });
+
+      // 3. Update Database 
+      const updatedEmployee = await prisma.employee.update({
+        where: { id: employeeId },
+        data: {
+          selfieFilename: null, // Actively remove legacy dependency for new uploads
+          selfieMimeType: processedMetadata.mimeType,
+          selfieSize: processedMetadata.size,
+          selfieCloudinaryUrl: cloudinaryResult.secure_url,
+          selfieCloudinaryId: cloudinaryResult.public_id,
+        }
+      });
+
+      // 4. Safely and asynchronously clean up the local temp processed file
+      cleanupFile(localProcessedPath);
+
+      return updatedEmployee;
+
+    } catch (error) {
+      // Safely and asynchronously clean up on failure before throwing
+      cleanupFile(localProcessedPath);
+      throw new Error('Failed to upload profile image to Cloudinary.');
+    }
   }
 
   static async saveDocument(
@@ -33,7 +59,6 @@ export class UploadService {
     const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
     if (!employee) throw new Error('Employee not found.');
 
-    // Map Prisma DocumentType enums to your specific filename abbreviations
     const docTypeMap: Record<DocumentType, string> = {
       AADHAAR: 'AADHAR',
       PAN: 'PAN',
@@ -47,24 +72,19 @@ export class UploadService {
     const suffix = docTypeMap[type] || type.toString();
     const firstName = employee.firstName.trim().toUpperCase().replace(/\s+/g, '_');
     const lastName = employee.surname.trim().toUpperCase().replace(/\s+/g, '_');
-    
-    // Construct the strict filename format
     const targetFilename = `${firstName}_${lastName}_${suffix}.pdf`;
 
-    // Process the upload (Image or PDF) into a standardized PDF
     const processedMetadata = await DocumentProcessorService.generateStandardizedPdf(
       file.path, 
       targetFilename, 
       file.mimetype
     );
 
-    // Save the new PDF metadata to the database
     return prisma.document.create({
       data: {
         employeeId,
         type,
         storedFilename: processedMetadata.filename,
-        // Override originalFilename so the uploaded random name is never used or seen
         originalFilename: targetFilename, 
         mimeType: processedMetadata.mimeType,
         fileSize: processedMetadata.size,
