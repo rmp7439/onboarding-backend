@@ -1,9 +1,6 @@
 import { Request, Response } from "express";
 import { ReportService } from "../services/reporting/report.service";
 import { prisma } from "../config/prisma";
-import PDFDocument from "pdfkit";
-import path from "path";
-import fs from "fs";
 
 export const exportExcel = async (
   req: Request,
