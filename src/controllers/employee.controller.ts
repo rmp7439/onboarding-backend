@@ -1,5 +1,6 @@
 import { RequestHandler } from "express";
 import { EmployeeService } from "../services/employee/employee.service";
+import { StorageService } from "../services/storage/storage.service";
 
 export const register: RequestHandler = async (req, res): Promise<void> => {
   try {
@@ -16,41 +17,72 @@ export const getEmployees: RequestHandler = async (req, res): Promise<void> => {
     const employees = await EmployeeService.getAllEmployees();
     res.status(200).json({ success: true, data: employees });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: "Failed to fetch employees" });
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch employees" });
   }
 };
 
-export const getEmployeeProfile: RequestHandler = async (req, res): Promise<void> => {
+export const getEmployeeProfile: RequestHandler = async (
+  req,
+  res,
+): Promise<void> => {
   try {
-    const id = String(req.params.id); 
+    const id = String(req.params.id);
     const profile = await EmployeeService.getEmployeeProfile(id);
-    
-    res.status(200).json({ 
-      success: true, 
-      data: { ...profile, selfieUrl: null }
+
+    const selfieUrl = profile.selfieFilename
+      ? await StorageService.getSignedUrl(profile.selfieFilename)
+      : null;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        ...profile,
+        selfieUrl,
+      },
     });
   } catch (error: any) {
-    res.status(404).json({ success: false, error: error.message });
+    res.status(404).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
-export const getEmployeeById: RequestHandler = async (req, res): Promise<void> => {
+export const getEmployeeById: RequestHandler = async (
+  req,
+  res,
+): Promise<void> => {
   try {
-    const id = String(req.params.id); 
+    const id = String(req.params.id);
     const employee = await EmployeeService.getEmployeeById(id);
 
-    res.status(200).json({ 
-      success: true, 
-      data: { ...employee, selfieUrl: null }
+    const selfieUrl = employee.selfieFilename
+      ? await StorageService.getSignedUrl(employee.selfieFilename)
+      : null;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        ...employee,
+        selfieUrl,
+      },
     });
   } catch (error: any) {
-    res.status(404).json({ success: false, error: error.message });
+    res.status(404).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
-export const searchEmployees: RequestHandler = async (req, res): Promise<void> => {
+export const searchEmployees: RequestHandler = async (
+  req,
+  res,
+): Promise<void> => {
   try {
-    const query = String(req.query.q || '');
+    const query = String(req.query.q || "");
     if (!query) {
       res.status(200).json({ success: true, data: [] });
       return;
@@ -58,14 +90,19 @@ export const searchEmployees: RequestHandler = async (req, res): Promise<void> =
     const results = await EmployeeService.searchEmployees(query);
     res.status(200).json({ success: true, data: results });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: "Failed to search employees." });
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to search employees." });
   }
 };
 
 export const updateStatus: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { id, status } = req.body;
-    const updatedEmployee = await EmployeeService.updateEmployeeStatus(String(id), status);
+    const updatedEmployee = await EmployeeService.updateEmployeeStatus(
+      String(id),
+      status,
+    );
     res.status(200).json({ success: true, data: updatedEmployee });
   } catch (error: any) {
     const statusCode = error.message.includes("not found") ? 404 : 400;
@@ -76,7 +113,10 @@ export const updateStatus: RequestHandler = async (req, res): Promise<void> => {
 export const updateCode: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { id, employeeCode } = req.body;
-    const updatedEmployee = await EmployeeService.updateEmployeeCode(String(id), employeeCode);
+    const updatedEmployee = await EmployeeService.updateEmployeeCode(
+      String(id),
+      employeeCode,
+    );
     res.status(200).json({ success: true, data: updatedEmployee });
   } catch (error: any) {
     const statusCode = error.message.includes("not found") ? 404 : 409;
