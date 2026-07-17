@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 
-export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction): void => {
+export const errorHandler = (err: Error & { statusCode?: number; code?: string; meta?: { target?: string[] } }, req: Request, res: Response, next: NextFunction): void => {
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Internal Server Error';
 
