@@ -56,6 +56,10 @@ model Employee {
   dateOfBirth DateTime
   joiningDate DateTime
 
+  selfieFilename String?
+  selfieMimeType String?
+  selfieSize     Int?
+
   mobile String @unique
   aadhaar String  @unique
   pan     String  @unique
