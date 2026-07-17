@@ -59,7 +59,7 @@ export class ReportService {
       where: { id },
       select: {
         id: true, firstName: true, surname: true, fatherName: true, husbandName: true,
-        mobile: true, employeeCode: true, joiningDate: true, uploadedAt: true, selfieFilename: true,
+        mobile: true, employeeCode: true, joiningDate: true, uploadedAt: true,
         selfieCloudinaryUrl: true, selfieCloudinaryId: true,
         documents: { select: { id: true, type: true } }
       }

@@ -1,5 +1,4 @@
 import express, { Application } from 'express';
-import path from 'path';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -15,7 +14,6 @@ app.use(helmet({
 }));
 app.use(express.json({ limit: '10kb' })); 
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use(cors({
   origin: env.CORS_ORIGIN,
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],

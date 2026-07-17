@@ -24,13 +24,10 @@ export const getEmployeeProfile: RequestHandler = async (req, res): Promise<void
   try {
     const id = String(req.params.id); 
     const profile = await EmployeeService.getEmployeeProfile(id);
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
     
-    // Cloudinary preferred; legacy local format as fallback
-    const selfieUrl = profile.selfieCloudinaryUrl 
-      || (profile.selfieFilename ? `${baseUrl}/uploads/jpg/${profile.selfieFilename}` : null);
-
-    const { selfieFilename, selfieCloudinaryUrl, selfieCloudinaryId, ...safeProfile } = profile as any;
+    // Cloudinary preferred directly
+    const selfieUrl = profile.selfieCloudinaryUrl;
+    const { selfieCloudinaryUrl, selfieCloudinaryId, ...safeProfile } = profile as any;
 
     res.status(200).json({ 
       success: true, 
@@ -45,15 +42,14 @@ export const getEmployeeById: RequestHandler = async (req, res): Promise<void> =
   try {
     const id = String(req.params.id); 
     const employee = await EmployeeService.getEmployeeById(id);
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
     
-    // Cloudinary preferred; legacy local format as fallback
-    const selfieUrl = employee.selfieCloudinaryUrl 
-      || (employee.selfieFilename ? `${baseUrl}/uploads/jpg/${employee.selfieFilename}` : null);
+    // Cloudinary preferred directly
+    const selfieUrl = employee.selfieCloudinaryUrl;
+    const { selfieCloudinaryUrl, selfieCloudinaryId, ...safeProfile } = employee as any;
 
     res.status(200).json({ 
       success: true, 
-      data: { ...employee, selfieUrl }
+      data: { ...safeProfile, selfieUrl }
     });
   } catch (error: any) {
     res.status(404).json({ success: false, error: error.message });

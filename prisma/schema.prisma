@@ -43,7 +43,6 @@ model Employee {
   id String @id @default(cuid())
 
   employeeCode String? @unique
-
   status EmployeeStatus @default(PENDING)
 
   firstName   String
@@ -58,7 +57,6 @@ model Employee {
   joiningDate DateTime
 
   mobile String @unique
-
   aadhaar String  @unique
   pan     String  @unique
   uan     String?
@@ -80,12 +78,7 @@ model Employee {
   emergencyRelation String
   emergencyPhone    String
 
-  // Legacy Local Storage (Kept exclusively for backward compatibility)
-  selfieFilename String?
-  selfieMimeType String?
-  selfieSize     Int?
-
-  // NEW: Cloudinary Storage
+  // Cloudinary Storage
   selfieCloudinaryUrl String?
   selfieCloudinaryId  String?
 
@@ -111,12 +104,10 @@ model Document {
   id               String   @id @default(cuid())
   employeeId       String
   type             DocumentType
-  storedFilename   String
   originalFilename String
   mimeType         String
   fileSize         Int
   uploadedAt       DateTime @default(now())
-  fileExtension    String
 
   cloudinaryUrl      String?
   cloudinaryPublicId String?

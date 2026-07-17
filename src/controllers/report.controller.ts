@@ -51,12 +51,10 @@ export const exportMobileExcel = async (
 
     res.send(buffer);
   } catch (error: any) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: "Failed to generate Excel report via mobile.",
-      });
+    res.status(500).json({
+      success: false,
+      error: "Failed to generate Excel report via mobile.",
+    });
   }
 };
 
@@ -112,19 +110,9 @@ export const getReportEmployeeDetail = async (
       selfieCloudinaryId?: string | null;
     };
 
-    // Cloudinary preferred; legacy local format as fallback
-    const selfieUrl =
-      reportEmployee.selfieCloudinaryUrl ||
-      (reportEmployee.selfieFilename
-        ? `${baseUrl}/uploads/jpg/${reportEmployee.selfieFilename}`
-        : null);
-
-    const {
-      selfieFilename,
-      selfieCloudinaryUrl,
-      selfieCloudinaryId,
-      ...safeProfile
-    } = reportEmployee as any;
+    const selfieUrl = reportEmployee.selfieCloudinaryUrl;
+    const { selfieCloudinaryUrl, selfieCloudinaryId, ...safeProfile } =
+      reportEmployee as any;
 
     res.status(200).json({
       success: true,
@@ -143,56 +131,12 @@ export const downloadReportDocument = async (
     const id = String(req.params.docId);
     const document = await prisma.document.findUnique({ where: { id } });
 
-    if (!document) {
+    if (!document || !document.cloudinaryUrl) {
       res.status(404).json({ success: false, error: "Document not found" });
       return;
     }
 
-    if (document.cloudinaryUrl) {
-      res.redirect(302, document.cloudinaryUrl);
-      return;
-    }
-
-    const baseDir = document.mimeType === "application/pdf" ? "pdf" : "jpg";
-    const documentWithStoredFilename = document as typeof document & {
-      storedFilename: string;
-    };
-    const filePath = path.join(
-      __dirname,
-      `../../uploads/${baseDir}`,
-      documentWithStoredFilename.storedFilename,
-    );
-
-    if (!fs.existsSync(filePath)) {
-      res
-        .status(404)
-        .json({ success: false, error: "File not found on server" });
-      return;
-    }
-
-    if (document.mimeType.startsWith("image/")) {
-      const pdfFilename =
-        document.originalFilename.replace(/\.[^/.]+$/, "") + ".pdf";
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `inline; filename="${pdfFilename}"`);
-
-      const doc = new PDFDocument({ margin: 0, size: "A4" });
-      doc.pipe(res);
-      doc.image(filePath, 0, 0, {
-        fit: [595.28, 841.89],
-        align: "center",
-        valign: "center",
-      });
-      doc.end();
-    } else {
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader(
-        "Content-Disposition",
-        `inline; filename="${document.originalFilename}"`,
-      );
-      const fileStream = fs.createReadStream(filePath);
-      fileStream.pipe(res);
-    }
+    res.redirect(302, document.cloudinaryUrl);
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }
