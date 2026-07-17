@@ -25,13 +25,9 @@ export const getEmployeeProfile: RequestHandler = async (req, res): Promise<void
     const id = String(req.params.id); 
     const profile = await EmployeeService.getEmployeeProfile(id);
     
-    // Cloudinary preferred directly
-    const selfieUrl = profile.selfieCloudinaryUrl;
-    const { selfieCloudinaryUrl, selfieCloudinaryId, ...safeProfile } = profile as any;
-
     res.status(200).json({ 
       success: true, 
-      data: { ...safeProfile, selfieUrl }
+      data: { ...profile, selfieUrl: null }
     });
   } catch (error: any) {
     res.status(404).json({ success: false, error: error.message });
@@ -42,14 +38,10 @@ export const getEmployeeById: RequestHandler = async (req, res): Promise<void> =
   try {
     const id = String(req.params.id); 
     const employee = await EmployeeService.getEmployeeById(id);
-    
-    // Cloudinary preferred directly
-    const selfieUrl = employee.selfieCloudinaryUrl;
-    const { selfieCloudinaryUrl, selfieCloudinaryId, ...safeProfile } = employee as any;
 
     res.status(200).json({ 
       success: true, 
-      data: { ...safeProfile, selfieUrl }
+      data: { ...employee, selfieUrl: null }
     });
   } catch (error: any) {
     res.status(404).json({ success: false, error: error.message });

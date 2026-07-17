@@ -1,20 +1,6 @@
 import { prisma } from "../../config/prisma";
 import { DocumentType, Employee, Document } from "@prisma/client";
 import { DocumentProcessorService } from "../processing/document-processor.service";
-import cloudinary from "../../config/cloudinary";
-
-const uploadToCloudinary = (buffer: Buffer, options: any): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      options,
-      (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      },
-    );
-    stream.end(buffer);
-  });
-};
 
 export class UploadService {
   static async saveSelfie(
@@ -31,25 +17,9 @@ export class UploadService {
       file.mimetype,
     );
 
-    try {
-      const cloudinaryResult = await uploadToCloudinary(
-        processedMetadata.buffer,
-        {
-          folder: "employee_selfies",
-          public_id: `selfie_${employeeId}_${Date.now()}`,
-        },
-      );
+    // TODO: Upload processedMetadata.buffer to new storage provider
 
-      return await prisma.employee.update({
-        where: { id: employeeId },
-        data: {
-          selfieCloudinaryUrl: cloudinaryResult.secure_url,
-          selfieCloudinaryId: cloudinaryResult.public_id,
-        },
-      });
-    } catch (error) {
-      throw new Error("Failed to upload profile image to Cloudinary.");
-    }
+    return employee; // Temporarily return the unmodified employee
   }
 
   static async saveDocument(
@@ -86,40 +56,16 @@ export class UploadService {
         file.mimetype,
       );
 
-    try {
-      const cloudinaryResult = await uploadToCloudinary(
-        processedMetadata.buffer,
-        {
-          resource_type: "raw",
-          folder: "employee_documents",
-          public_id: `doc_${employeeId}_${type}_${Date.now()}`,
-        },
-      );
+    // TODO: Upload processedMetadata.buffer to new storage provider
 
-      return await prisma.document.create({
-        data: {
-          employeeId,
-          type,
-          originalFilename: targetFilename,
-          mimeType: processedMetadata.mimeType,
-          fileSize: processedMetadata.size,
-          cloudinaryUrl: cloudinaryResult.secure_url,
-          cloudinaryPublicId: cloudinaryResult.public_id,
-
-          storedFilename: cloudinaryResult.public_id,
-          fileExtension: ".pdf",
-        },
-      });
-    } catch (error) {
-      console.error("========== REAL ERROR ==========");
-      console.error(error);
-
-      if (error instanceof Error) {
-        console.error("Message:", error.message);
-        console.error("Stack:", error.stack);
-      }
-
-      throw error;
-    }
+    return await prisma.document.create({
+      data: {
+        employeeId,
+        type,
+        originalFilename: targetFilename,
+        mimeType: processedMetadata.mimeType,
+        fileSize: processedMetadata.size,
+      },
+    });
   }
 }

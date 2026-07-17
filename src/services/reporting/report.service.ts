@@ -54,13 +54,11 @@ export class ReportService {
   }
 
   static async getReportEmployeeDetail(id: string) {
-    // ... preserved from previous step
     const employee = await prisma.employee.findUnique({
       where: { id },
       select: {
         id: true, firstName: true, surname: true, fatherName: true, husbandName: true,
         mobile: true, employeeCode: true, joiningDate: true, uploadedAt: true,
-        selfieCloudinaryUrl: true, selfieCloudinaryId: true,
         documents: { select: { id: true, type: true } }
       }
     });

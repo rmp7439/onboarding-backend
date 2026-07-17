@@ -14,9 +14,6 @@ interface EnvConfig {
   NODE_ENV: string;
   CORS_ORIGIN: string;
   JWT_SECRET: string;
-  CLOUDINARY_CLOUD_NAME: string;
-  CLOUDINARY_API_KEY: string;
-  CLOUDINARY_API_SECRET: string;
 }
 
 export const env: EnvConfig = {
@@ -24,7 +21,4 @@ export const env: EnvConfig = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
   JWT_SECRET: process.env.JWT_SECRET || 'dev-secret',
-  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || '',
-  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '',
-  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || '',
 };

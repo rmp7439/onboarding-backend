@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { ReportService } from "../services/reporting/report.service";
-import { prisma } from "../config/prisma";
 
 export const exportExcel = async (
   req: Request,
@@ -100,41 +99,18 @@ export const getReportEmployeeDetail = async (
     const employee = await ReportService.getReportEmployeeDetail(
       String(req.params.id),
     );
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-    const reportEmployee = employee as typeof employee & {
-      selfieFilename?: string | null;
-      selfieCloudinaryUrl?: string | null;
-      selfieCloudinaryId?: string | null;
-    };
-
-    const selfieUrl = reportEmployee.selfieCloudinaryUrl;
-    const { selfieCloudinaryUrl, selfieCloudinaryId, ...safeProfile } =
-      reportEmployee as any;
 
     res.status(200).json({
       success: true,
-      data: { ...safeProfile, selfieUrl },
+      data: { ...employee, selfieUrl: null },
     });
   } catch (error: any) {
     res.status(404).json({ success: false, error: error.message });
   }
 };
 
-export const downloadReportDocument = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
-    const id = String(req.params.docId);
-    const document = await prisma.document.findUnique({ where: { id } });
-
-    if (!document || !document.cloudinaryUrl) {
-      res.status(404).json({ success: false, error: "Document not found" });
-      return;
-    }
-
-    res.redirect(302, document.cloudinaryUrl);
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
-  }
+export const downloadReportDocument = async (res: Response): Promise<void> => {
+  res
+    .status(501)
+    .json({ success: false, error: "Storage provider not implemented." });
 };

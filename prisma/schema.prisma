@@ -78,10 +78,6 @@ model Employee {
   emergencyRelation String
   emergencyPhone    String
 
-  // Cloudinary Storage
-  selfieCloudinaryUrl String?
-  selfieCloudinaryId  String?
-
   documents Document[]
 
   uploadedAt DateTime @default(now())
@@ -111,9 +107,6 @@ model Document {
 
   storedFilename      String
   fileExtension       String
-
-  cloudinaryUrl      String?
-  cloudinaryPublicId String?
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 

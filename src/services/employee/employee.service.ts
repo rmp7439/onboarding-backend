@@ -42,8 +42,6 @@ export class EmployeeService {
       joiningDate: employee.joiningDate,
       gender: employee.gender,
       bloodGroup: employee.bloodGroup,
-      selfieCloudinaryUrl: employee.selfieCloudinaryUrl,
-      selfieCloudinaryId: employee.selfieCloudinaryId,
     };
   }
 
