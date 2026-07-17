@@ -1,6 +1,7 @@
 import { prisma } from "../../config/prisma";
 import { DocumentType, Employee, Document } from "@prisma/client";
 import { DocumentProcessorService } from "../processing/document-processor.service";
+import { StorageService } from "../storage/storage.service";
 
 export class UploadService {
   static async saveSelfie(
@@ -17,9 +18,22 @@ export class UploadService {
       file.mimetype,
     );
 
-    // TODO: Upload processedMetadata.buffer to new storage provider
+    const storagePath = `employees/${employeeId}/selfie.jpg`;
 
-    return employee; // Temporarily return the unmodified employee
+    await StorageService.upload(
+      processedMetadata.buffer,
+      storagePath,
+      processedMetadata.mimeType,
+    );
+
+    return await prisma.employee.update({
+      where: { id: employeeId },
+      data: {
+        selfieFilename: storagePath,
+        selfieMimeType: processedMetadata.mimeType,
+        selfieSize: processedMetadata.size,
+      },
+    });
   }
 
   static async saveDocument(
@@ -56,15 +70,23 @@ export class UploadService {
         file.mimetype,
       );
 
-    // TODO: Upload processedMetadata.buffer to new storage provider
+    const storagePath = `employees/${employeeId}/documents/${targetFilename}`;
+
+    await StorageService.upload(
+      processedMetadata.buffer,
+      storagePath,
+      processedMetadata.mimeType,
+    );
 
     return await prisma.document.create({
       data: {
         employeeId,
         type,
+        storedFilename: storagePath,
         originalFilename: targetFilename,
         mimeType: processedMetadata.mimeType,
         fileSize: processedMetadata.size,
+        fileExtension: processedMetadata.extension,
       },
     });
   }
