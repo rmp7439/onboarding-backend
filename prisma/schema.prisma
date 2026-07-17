@@ -109,6 +109,9 @@ model Document {
   fileSize         Int
   uploadedAt       DateTime @default(now())
 
+  storedFilename      String
+  fileExtension       String
+
   cloudinaryUrl      String?
   cloudinaryPublicId String?
 
