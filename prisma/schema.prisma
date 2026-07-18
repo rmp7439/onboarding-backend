@@ -7,6 +7,71 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Employee {
+  id                String         @id @default(cuid())
+  employeeCode      String?        @unique
+  status            EmployeeStatus @default(PENDING)
+  firstName         String
+  surname           String
+  fatherName        String
+  husbandName       String?
+  gender            Gender
+  bloodGroup        BloodGroup
+  dateOfBirth       DateTime
+  joiningDate       DateTime
+  mobile            String         @unique
+  aadhaar           String         @unique
+  pan               String         @unique
+  uan               String?
+  esic              String?
+  permanentAddress  String
+  currentAddress    String
+  city              String
+  state             String
+  pinCode           String
+  bankName          String
+  accountNumber     String
+  ifsc              String
+  branch            String
+  micr              String
+  emergencyName     String
+  emergencyRelation String
+  emergencyPhone    String
+  selfieFilename    String?
+  selfieMimeType    String?
+  selfieSize        Int?
+  uploadedAt        DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  documents         Document[]
+
+  @@index([firstName, surname])
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Document {
+  id               String       @id @default(cuid())
+  employeeId       String
+  type             DocumentType
+  storedFilename   String
+  originalFilename String
+  mimeType         String
+  fileSize         Int
+  uploadedAt       DateTime     @default(now())
+  fileExtension    String
+  employee         Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
 enum EmployeeStatus {
   PENDING
   APPROVED
@@ -37,82 +102,4 @@ enum BloodGroup {
   AB_NEGATIVE
   O_POSITIVE
   O_NEGATIVE
-}
-
-model Employee {
-  id String @id @default(cuid())
-
-  employeeCode String? @unique
-  status EmployeeStatus @default(PENDING)
-
-  firstName   String
-  surname     String
-  fatherName  String
-  husbandName String?
-
-  gender Gender
-  bloodGroup BloodGroup
-
-  dateOfBirth DateTime
-  joiningDate DateTime
-
-  selfieFilename String?
-  selfieMimeType String?
-  selfieSize     Int?
-
-  mobile String @unique
-  aadhaar String  @unique
-  pan     String  @unique
-  uan     String?
-  esic    String?
-
-  permanentAddress String
-  currentAddress   String
-  city             String
-  state            String
-  pinCode          String
-
-  bankName      String
-  accountNumber String
-  ifsc          String
-  branch        String
-  micr          String
-
-  emergencyName     String
-  emergencyRelation String
-  emergencyPhone    String
-
-  documents Document[]
-
-  uploadedAt DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([firstName, surname])
-}
-
-model Admin {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      String   @default("ADMIN")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Document {
-  id               String   @id @default(cuid())
-  employeeId       String
-  type             DocumentType
-  originalFilename String
-  mimeType         String
-  fileSize         Int
-  uploadedAt       DateTime @default(now())
-
-  storedFilename      String
-  fileExtension       String
-
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-
-  @@index([employeeId])
 }
