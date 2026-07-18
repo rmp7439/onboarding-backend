@@ -160,7 +160,7 @@ export class ReportService {
     const getDocHyperlink = (docs: any[], type: string, label: string) => {
       const doc = docs.find(d => d.type === type);
       if (doc) {
-        return { text: `View ${label}`, hyperlink: `${baseUrl}/document/${doc.id}/download` };
+        return { text: `View ${label}`, hyperlink: `${baseUrl}/reports/document/${doc.id}/download` };
       }
       return "Not Uploaded";
     };
@@ -303,7 +303,7 @@ export class ReportService {
              .text(`${index + 1}. ${dt.label}: `, { continued: true });
 
           if (docItem) {
-            const url = `${baseUrl}/document/${docItem.id}/download`;
+            const url = `${baseUrl}/reports/document/${docItem.id}/download`;
             doc.fillColor("#2563eb").text(`View ${dt.label}`, {
               link: url,
               underline: true

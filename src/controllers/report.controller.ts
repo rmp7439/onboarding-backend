@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { ReportService } from "../services/reporting/report.service";
+import { prisma } from "../config/prisma";
+import { StorageService } from "../services/storage/storage.service";
 
 export const exportExcel = async (
   req: Request,
@@ -109,8 +111,21 @@ export const getReportEmployeeDetail = async (
   }
 };
 
-export const downloadReportDocument = async (res: Response): Promise<void> => {
-  res
-    .status(501)
-    .json({ success: false, error: "Storage provider not implemented." });
+export const downloadReportDocument = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const document = await prisma.document.findUnique({
+      where: { id: String(req.params.docId) }
+    });
+
+    if (!document) {
+      res.status(404).send("Document not found.");
+      return;
+    }
+
+    const signedUrl = await StorageService.getSignedUrl(document.storedFilename);
+    // Send a 302 redirect so the browser downloads/opens the raw file
+    res.redirect(signedUrl);
+  } catch (error: any) {
+    res.status(500).send("Failed to generate document link.");
+  }
 };
