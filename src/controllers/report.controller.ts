@@ -129,3 +129,25 @@ export const downloadReportDocument = async (req: Request, res: Response): Promi
     res.status(500).send("Failed to generate document link.");
   }
 };
+
+// Add this new export to the file
+export const downloadBulkPdf = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const filters = req.query;
+    const baseUrl = `${req.protocol}://${req.get("host")}/api`;
+    const buffer = await ReportService.generateBulkPdf(filters, baseUrl);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="Employee_Bulk_Report.pdf"`,
+    );
+
+    res.send(buffer);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: "Failed to generate Bulk PDF report." });
+  }
+};
