@@ -71,8 +71,22 @@ export class EmployeeService {
     }));
   }
 
-  static async getAllEmployees(): Promise<Employee[]> {
-    return prisma.employee.findMany({ orderBy: { uploadedAt: 'desc' } });
+  static async getAllEmployees(searchQuery?: string): Promise<Employee[]> {
+    const where: Prisma.EmployeeWhereInput = {};
+    
+    if (searchQuery) {
+      where.OR = [
+        { firstName: { contains: searchQuery, mode: 'insensitive' } },
+        { surname: { contains: searchQuery, mode: 'insensitive' } },
+        { employeeCode: { contains: searchQuery, mode: 'insensitive' } },
+        { mobile: { contains: searchQuery } } // mobile is a string in the schema
+      ];
+    }
+
+    return prisma.employee.findMany({ 
+      where, 
+      orderBy: { uploadedAt: 'desc' } 
+    });
   }
 
   static async getEmployeeById(id: string): Promise<Employee> {

@@ -14,7 +14,8 @@ export const register: RequestHandler = async (req, res): Promise<void> => {
 
 export const getEmployees: RequestHandler = async (req, res): Promise<void> => {
   try {
-    const employees = await EmployeeService.getAllEmployees();
+    const search = req.query.search ? String(req.query.search) : undefined;
+    const employees = await EmployeeService.getAllEmployees(search);
     res.status(200).json({ success: true, data: employees });
   } catch (error: any) {
     res
