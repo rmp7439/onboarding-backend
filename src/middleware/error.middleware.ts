@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 
 export const errorHandler = (err: Error & { statusCode?: number; code?: string; meta?: { target?: string[] } }, req: Request, res: Response, next: NextFunction): void => {
