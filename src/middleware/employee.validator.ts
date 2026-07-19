@@ -24,6 +24,7 @@ export const validateRegistration = (req: Request, res: Response, next: NextFunc
 
 export const validateStatusUpdate = (req: Request, res: Response, next: NextFunction): void => {
   const { id, status, rejectReason } = req.body;
+  
   if (!id || !status || !['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
     res.status(400).json({ success: false, error: 'Valid ID and Status (PENDING, APPROVED, REJECTED) are required' });
     return;
@@ -42,6 +43,7 @@ export const validateStatusUpdate = (req: Request, res: Response, next: NextFunc
       return;
     }
   } else {
+    // Force rejectReason to null for PENDING or APPROVED
     req.body.rejectReason = null;
   }
 

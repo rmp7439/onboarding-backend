@@ -86,7 +86,7 @@ export class EmployeeService {
         { firstName: { contains: searchQuery, mode: 'insensitive' } },
         { surname: { contains: searchQuery, mode: 'insensitive' } },
         { employeeCode: { contains: searchQuery, mode: 'insensitive' } },
-        { mobile: { contains: searchQuery } } // mobile is a string in the schema
+        { mobile: { contains: searchQuery } } 
       ];
     }
 
@@ -105,19 +105,9 @@ export class EmployeeService {
     return employee;
   }
 
-  static async updateEmployeeStatus(
-    id: string,
-    status: EmployeeStatus,
-    rejectReason?: string | null,
-  ): Promise<Employee> {
+  static async updateEmployeeStatus(id: string, status: EmployeeStatus, rejectReason: string | null = null): Promise<Employee> {
     await this.getEmployeeById(id);
-    return prisma.employee.update({
-      where: { id },
-      data: {
-        status,
-        rejectReason: status === EmployeeStatus.REJECTED ? rejectReason ?? null : null,
-      },
-    });
+    return prisma.employee.update({ where: { id }, data: { status, rejectReason } });
   }
 
   static async updateEmployeeCode(id: string, employeeCode: string): Promise<Employee> {
