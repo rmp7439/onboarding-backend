@@ -37,6 +37,7 @@ model Employee {
   emergencyName     String
   emergencyRelation String
   emergencyPhone    String
+  rejectReason      String?        
   selfieFilename    String?
   selfieMimeType    String?
   selfieSize        Int?

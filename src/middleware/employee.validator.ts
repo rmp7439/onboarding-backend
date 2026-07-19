@@ -23,11 +23,28 @@ export const validateRegistration = (req: Request, res: Response, next: NextFunc
 };
 
 export const validateStatusUpdate = (req: Request, res: Response, next: NextFunction): void => {
-  const { id, status } = req.body;
+  const { id, status, rejectReason } = req.body;
   if (!id || !status || !['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
     res.status(400).json({ success: false, error: 'Valid ID and Status (PENDING, APPROVED, REJECTED) are required' });
     return;
   }
+
+  if (status === 'REJECTED') {
+    if (!rejectReason || typeof rejectReason !== 'string' || rejectReason.trim() === '') {
+      res.status(400).json({ success: false, error: 'Reject reason is required when status is REJECTED.' });
+      return;
+    }
+    
+    req.body.rejectReason = rejectReason.trim();
+    
+    if (req.body.rejectReason.length > 250) {
+      res.status(400).json({ success: false, error: 'Reject reason cannot exceed 250 characters.' });
+      return;
+    }
+  } else {
+    req.body.rejectReason = null;
+  }
+
   next();
 };
 

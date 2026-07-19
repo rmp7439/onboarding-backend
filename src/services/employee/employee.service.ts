@@ -1,6 +1,10 @@
 import { prisma } from '../../config/prisma';
 import { Employee, EmployeeStatus, Prisma } from '@prisma/client';
 
+type EmployeeWithRejectReason = Employee & {
+  rejectReason?: string | null;
+};
+
 export class EmployeeService {
   static async registerEmployee(data: Prisma.EmployeeCreateInput): Promise<Employee> {
     const existingEmployee = await prisma.employee.findFirst({
@@ -31,6 +35,7 @@ export class EmployeeService {
 
   static async getEmployeeProfile(id: string) {
     const employee = await this.getEmployeeById(id);
+    const employeeWithRejectReason = employee as EmployeeWithRejectReason;
 
     return {
       id: employee.id,
@@ -38,6 +43,7 @@ export class EmployeeService {
       surname: employee.surname,
       employeeCode: employee.employeeCode,
       status: employee.status,
+      rejectReason: employeeWithRejectReason.rejectReason,
       mobile: employee.mobile,
       joiningDate: employee.joiningDate,
       gender: employee.gender,
@@ -67,6 +73,7 @@ export class EmployeeService {
       surname: emp.surname,
       employeeCode: emp.employeeCode,
       status: emp.status,
+      rejectReason: (emp as EmployeeWithRejectReason).rejectReason,
       mobile: emp.mobile,
     }));
   }
@@ -98,9 +105,19 @@ export class EmployeeService {
     return employee;
   }
 
-  static async updateEmployeeStatus(id: string, status: EmployeeStatus): Promise<Employee> {
+  static async updateEmployeeStatus(
+    id: string,
+    status: EmployeeStatus,
+    rejectReason?: string | null,
+  ): Promise<Employee> {
     await this.getEmployeeById(id);
-    return prisma.employee.update({ where: { id }, data: { status } });
+    return prisma.employee.update({
+      where: { id },
+      data: {
+        status,
+        rejectReason: status === EmployeeStatus.REJECTED ? rejectReason ?? null : null,
+      },
+    });
   }
 
   static async updateEmployeeCode(id: string, employeeCode: string): Promise<Employee> {

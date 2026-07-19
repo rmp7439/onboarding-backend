@@ -99,10 +99,11 @@ export const searchEmployees: RequestHandler = async (
 
 export const updateStatus: RequestHandler = async (req, res): Promise<void> => {
   try {
-    const { id, status } = req.body;
+    const { id, status, rejectReason } = req.body;
     const updatedEmployee = await EmployeeService.updateEmployeeStatus(
       String(id),
       status,
+      rejectReason
     );
     res.status(200).json({ success: true, data: updatedEmployee });
   } catch (error: any) {
