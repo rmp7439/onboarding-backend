@@ -6,7 +6,13 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
     const users = await UserService.getUsers();
     res.status(200).json({ success: true, data: users });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: 'Failed to fetch users.' });
+    console.error("GET USERS ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined
+    });
   }
 };
 
