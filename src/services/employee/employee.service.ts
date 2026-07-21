@@ -35,22 +35,8 @@ export class EmployeeService {
 
   static async getEmployeeProfile(id: string) {
   const employee = await this.getEmployeeById(id);
-  const employeeWithRejectReason = employee as EmployeeWithRejectReason;
 
-  return {
-    id: employee.id,
-    firstName: employee.firstName,
-    surname: employee.surname,
-    employeeCode: employee.employeeCode,
-    status: employee.status,
-    rejectReason: employeeWithRejectReason.rejectReason,
-    correctionRemark: employee.correctionRemark, // <-- ADD THIS
-    mobile: employee.mobile,
-    joiningDate: employee.joiningDate,
-    gender: employee.gender,
-    bloodGroup: employee.bloodGroup,
-    selfieFilename: employee.selfieFilename,
-  };
+  return employee;
 }
 
   static async returnForCorrection(id: string, remark: string): Promise<Employee> {
