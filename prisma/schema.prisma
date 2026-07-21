@@ -21,6 +21,7 @@ model Employee {
   id                String         @id @default(cuid())
   employeeCode      String?        @unique
   status            EmployeeStatus @default(PENDING)
+  unit              String?        // NEW: Added so the unit site is persisted
   firstName         String
   surname           String
   fatherName        String
@@ -47,7 +48,7 @@ model Employee {
   emergencyName     String
   emergencyRelation String
   emergencyPhone    String
-  rejectReason      String?
+  rejectReason      String?        
   correctionRemark  String?        
   selfieFilename    String?
   selfieMimeType    String?

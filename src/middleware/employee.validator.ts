@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 
 export const validateRegistration = (req: Request, res: Response, next: NextFunction): void => {
   const requiredFields = [
+    'unit', // NEW: Validate unit
     'firstName', 'surname', 'fatherName', 'gender', 'bloodGroup', 
     'dateOfBirth', 'joiningDate', 'mobile', 'aadhaar', 'pan', 
     'permanentAddress', 'currentAddress', 'city', 'state', 'pinCode', 
@@ -75,6 +76,7 @@ export const validateReturnForCorrection = (req: Request, res: Response, next: N
 
 export const validateEmployeeUpdate = (req: Request, res: Response, next: NextFunction): void => {
   const requiredFields = [
+    'unit', // NEW: Validate unit on edit
     'firstName', 'surname', 'fatherName', 'gender', 'bloodGroup', 
     'dateOfBirth', 'joiningDate', 'mobile', 'aadhaar', 'pan', 
     'permanentAddress', 'currentAddress', 'city', 'state', 'pinCode', 
