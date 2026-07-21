@@ -52,6 +52,51 @@ export class EmployeeService {
     };
   }
 
+  static async returnForCorrection(id: string, remark: string): Promise<Employee> {
+    await this.getEmployeeById(id);
+    return prisma.employee.update({
+      where: { id },
+      data: {
+        status: EmployeeStatus.RETURNED_FOR_CORRECTION,
+        correctionRemark: remark
+      }
+    });
+  }
+
+  static async updateEmployee(id: string, data: Prisma.EmployeeUpdateInput): Promise<Employee> {
+    const employee = await this.getEmployeeById(id);
+
+    // Validate unique constraints if user attempts to modify them
+    const orConditions = [];
+    if (data.mobile && data.mobile !== employee.mobile) orConditions.push({ mobile: data.mobile as string });
+    if (data.aadhaar && data.aadhaar !== employee.aadhaar) orConditions.push({ aadhaar: data.aadhaar as string });
+    if (data.pan && data.pan !== employee.pan) orConditions.push({ pan: data.pan as string });
+
+    if (orConditions.length > 0) {
+      const existing = await prisma.employee.findFirst({ where: { OR: orConditions } });
+      if (existing) {
+        if (existing.mobile === data.mobile) throw new Error('Mobile number already registered.');
+        if (existing.aadhaar === data.aadhaar) throw new Error('Aadhaar already registered.');
+        if (existing.pan === data.pan) throw new Error('PAN already registered.');
+      }
+    }
+
+    // Format Date strings properly before updating
+    const updateData: any = { ...data };
+    if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth as string | Date);
+    if (data.joiningDate) updateData.joiningDate = new Date(data.joiningDate as string | Date);
+
+    // Explicitly reset the status to PENDING and clear the correctionRemark
+    updateData.status = EmployeeStatus.PENDING;
+    updateData.correctionRemark = null;
+    updateData.rejectReason = null; // Also clear rejection reasons to be clean
+
+    return prisma.employee.update({
+      where: { id },
+      data: updateData
+    });
+  }
+
   static async searchEmployees(query: string) {
     const employees = await prisma.employee.findMany({
       where: {

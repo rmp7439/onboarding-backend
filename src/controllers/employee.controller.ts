@@ -24,6 +24,28 @@ export const getEmployees: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
+export const returnForCorrection: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const { remark } = req.body;
+    const updatedEmployee = await EmployeeService.returnForCorrection(String(req.params.id), remark);
+    res.status(200).json({ success: true, data: updatedEmployee });
+  } catch (error: any) {
+    const statusCode = error.message.includes("not found") ? 404 : 400;
+    res.status(statusCode).json({ success: false, error: error.message });
+  }
+};
+
+export const updateEmployee: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    const updatedEmployee = await EmployeeService.updateEmployee(id, req.body);
+    res.status(200).json({ success: true, data: updatedEmployee });
+  } catch (error: any) {
+    const statusCode = error.message.includes("already") ? 409 : (error.message.includes("not found") ? 404 : 400);
+    res.status(statusCode).json({ success: false, error: error.message });
+  }
+};
+
 export const getEmployeeProfile: RequestHandler = async (
   req,
   res,

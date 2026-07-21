@@ -2,6 +2,7 @@ import { prisma } from "../../config/prisma";
 import { DocumentType, Employee, Document } from "@prisma/client";
 import { DocumentProcessorService } from "../processing/document-processor.service";
 import { StorageService } from "../storage/storage.service";
+import { logger } from "../../utils/logger";
 
 export class UploadService {
   static async saveSelfie(
@@ -18,15 +19,20 @@ export class UploadService {
       file.mimetype,
     );
 
-    const storagePath = `employees/${employeeId}/selfie.jpg`;
+    // Grab the old filename before we overwrite the record
+    const oldFilename = employee.selfieFilename;
+    const timestamp = Date.now();
+    const storagePath = `employees/${employeeId}/selfie_${timestamp}.jpg`;
 
+    // 1. Upload new file (fails safely without touching the DB or old file)
     await StorageService.upload(
       processedMetadata.buffer,
       storagePath,
       processedMetadata.mimeType,
     );
 
-    return await prisma.employee.update({
+    // 2 & 3. Verify upload succeeded and update database
+    const updatedEmployee = await prisma.employee.update({
       where: { id: employeeId },
       data: {
         selfieFilename: storagePath,
@@ -34,6 +40,15 @@ export class UploadService {
         selfieSize: processedMetadata.size,
       },
     });
+
+    // 4. Safely clean up old file from storage (fire and forget to not block the response)
+    if (oldFilename && oldFilename !== storagePath) {
+      StorageService.delete(oldFilename).catch((err) =>
+        logger.error(`Failed to delete old selfie: ${oldFilename}`, err)
+      );
+    }
+
+    return updatedEmployee;
   }
 
   static async saveDocument(
@@ -45,6 +60,11 @@ export class UploadService {
       where: { id: employeeId },
     });
     if (!employee) throw new Error("Employee not found.");
+
+    // Check if the user already has this exact DocumentType uploaded
+    const existingDoc = await prisma.document.findFirst({
+      where: { employeeId, type },
+    });
 
     const docTypeMap: Record<DocumentType, string> = {
       AADHAAR: "AADHAR",
@@ -62,7 +82,10 @@ export class UploadService {
       .toUpperCase()
       .replace(/\s+/g, "_");
     const lastName = employee.surname.trim().toUpperCase().replace(/\s+/g, "_");
-    const targetFilename = `${firstName}_${lastName}_${suffix}.pdf`;
+    
+    // Add timestamp to make the filename unique so we don't accidentally overwrite in storage
+    const timestamp = Date.now();
+    const targetFilename = `${firstName}_${lastName}_${suffix}_${timestamp}.pdf`;
 
     const processedMetadata =
       await DocumentProcessorService.generateStandardizedPdf(
@@ -72,22 +95,49 @@ export class UploadService {
 
     const storagePath = `employees/${employeeId}/documents/${targetFilename}`;
 
+    // 1. Upload new file safely
     await StorageService.upload(
       processedMetadata.buffer,
       storagePath,
       processedMetadata.mimeType,
     );
 
-    return await prisma.document.create({
-      data: {
-        employeeId,
-        type,
-        storedFilename: storagePath,
-        originalFilename: targetFilename,
-        mimeType: processedMetadata.mimeType,
-        fileSize: processedMetadata.size,
-        fileExtension: processedMetadata.extension,
-      },
-    });
+    let document: Document;
+    const oldFilename = existingDoc?.storedFilename;
+
+    // 2 & 3. Verify upload succeeded, then Update OR Create the database record
+    if (existingDoc) {
+      document = await prisma.document.update({
+        where: { id: existingDoc.id },
+        data: {
+          storedFilename: storagePath,
+          originalFilename: targetFilename,
+          mimeType: processedMetadata.mimeType,
+          fileSize: processedMetadata.size,
+          fileExtension: processedMetadata.extension,
+        },
+      });
+    } else {
+      document = await prisma.document.create({
+        data: {
+          employeeId,
+          type,
+          storedFilename: storagePath,
+          originalFilename: targetFilename,
+          mimeType: processedMetadata.mimeType,
+          fileSize: processedMetadata.size,
+          fileExtension: processedMetadata.extension,
+        },
+      });
+    }
+
+    // 4 & 5. Delete old file from storage (record is already updated)
+    if (oldFilename && oldFilename !== storagePath) {
+      StorageService.delete(oldFilename).catch((err) =>
+        logger.error(`Failed to delete old document: ${oldFilename}`, err)
+      );
+    }
+
+    return document;
   }
 }

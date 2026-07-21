@@ -47,7 +47,8 @@ model Employee {
   emergencyName     String
   emergencyRelation String
   emergencyPhone    String
-  rejectReason      String?        
+  rejectReason      String?
+  correctionRemark  String?        
   selfieFilename    String?
   selfieMimeType    String?
   selfieSize        Int?
@@ -92,6 +93,7 @@ enum EmployeeStatus {
   PENDING
   APPROVED
   REJECTED
+  RETURNED_FOR_CORRECTION
 }
 
 enum Gender {

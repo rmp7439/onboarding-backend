@@ -58,3 +58,39 @@ export const validateCodeUpdate = (req: Request, res: Response, next: NextFuncti
   }
   next();
 };
+
+export const validateReturnForCorrection = (req: Request, res: Response, next: NextFunction): void => {
+  const { remark } = req.body;
+  if (!remark || typeof remark !== 'string' || remark.trim() === '') {
+    res.status(400).json({ success: false, error: 'Correction remark is required.' });
+    return;
+  }
+  if (remark.length > 500) {
+    res.status(400).json({ success: false, error: 'Remark cannot exceed 500 characters.' });
+    return;
+  }
+  req.body.remark = remark.trim();
+  next();
+};
+
+export const validateEmployeeUpdate = (req: Request, res: Response, next: NextFunction): void => {
+  const requiredFields = [
+    'firstName', 'surname', 'fatherName', 'gender', 'bloodGroup', 
+    'dateOfBirth', 'joiningDate', 'mobile', 'aadhaar', 'pan', 
+    'permanentAddress', 'currentAddress', 'city', 'state', 'pinCode', 
+    'bankName', 'accountNumber', 'ifsc', 'branch', 'micr', 
+    'emergencyName', 'emergencyRelation', 'emergencyPhone'
+  ];
+
+  const missingFields = requiredFields.filter(field => !req.body[field]);
+
+  if (missingFields.length > 0) {
+    res.status(400).json({
+      success: false,
+      error: `Missing required fields for update: ${missingFields.join(', ')}`
+    });
+    return;
+  }
+
+  next();
+};
