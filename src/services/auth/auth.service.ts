@@ -33,9 +33,42 @@ export class AuthService {
     };
   }
 
+  static async userLogin(loginId: string, password: string) {
+    const user = await prisma.user.findUnique({ where: { loginId } });
+
+    if (!user) {
+      throw new Error("Invalid credentials");
+    }
+
+    if (user.status !== "ACTIVE") {
+      throw new Error("User account is inactive");
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      throw new Error("Invalid credentials");
+    }
+
+    const token = jwt.sign(
+      { id: user.id, loginId: user.loginId, role: "USER", units: user.units },
+      env.JWT_SECRET,
+      { expiresIn: "1d" },
+    );
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        loginId: user.loginId,
+        status: user.status,
+        units: user.units,
+      },
+    };
+  }
+
   // Add to AuthService class
   static async employeeLogin(mobile: string, otp: string) {
-    // Note: OTP logic is mocked here to match existing setup.
     if (otp !== "123456") {
       throw new Error("Invalid OTP");
     }
@@ -46,7 +79,6 @@ export class AuthService {
       throw new Error("No employee record found for this mobile number");
     }
 
-    // Future-proofing: Generate JWT for the mobile app
     const token = jwt.sign(
       { id: employee.id, mobile: employee.mobile, role: "EMPLOYEE" },
       env.JWT_SECRET,
@@ -60,7 +92,6 @@ export class AuthService {
     };
   }
 
-  // Utility to seed an initial admin if needed
   static async createInitialAdmin() {
     const exists = await prisma.admin.count();
     if (exists === 0) {
