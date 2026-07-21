@@ -6,7 +6,8 @@ import dashboardRouter from './dashboard.route';
 import authRouter from './auth.route';
 import reportRouter from './report.route';
 import downloadRouter from './download.route';
-import userRouter from './user.route';
+import userRouter from './user.route'; // NEW
+import unitRouter from './unit.route'; // NEW
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.use(dashboardRouter);
 router.use(authRouter);
 router.use(reportRouter);
 router.use(downloadRouter);
-router.use(userRouter);
+router.use(userRouter); // NEW
+router.use(unitRouter); // NEW
 
 export default router;
