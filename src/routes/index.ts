@@ -6,6 +6,8 @@ import dashboardRouter from './dashboard.route';
 import authRouter from './auth.route';
 import reportRouter from './report.route';
 import downloadRouter from './download.route';
+
+// 1. Import the new modules
 import userRouter from './user.route';
 import unitRouter from './unit.route';
 
@@ -19,8 +21,8 @@ router.use(authRouter);
 router.use(reportRouter);
 router.use(downloadRouter);
 
-// Explicitly mount the User and Unit routers at their correct base paths
-router.use('/users', userRouter);
-router.use('/units', unitRouter);
+// 2. Register the new modules mirroring the existing pattern
+router.use(userRouter);
+router.use(unitRouter);
 
 export default router;

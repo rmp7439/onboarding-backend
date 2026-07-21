@@ -1,16 +1,17 @@
-import { Router } from 'express';
-import { getUnits, createUnit, updateUnit, deleteUnit } from '../controllers/unit.controller';
+import { Router, RequestHandler } from 'express';
+import { 
+  getUnits, 
+  createUnit, 
+  updateUnit, 
+  deleteUnit 
+} from '../controllers/unit.controller';
 import { authenticateAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Apply authentication middleware to all unit management routes
-router.use(authenticateAdmin);
-
-// Paths are defined relative to where this router is mounted (/units)
-router.get('/', getUnits);
-router.post('/', createUnit);
-router.put('/:id', updateUnit);
-router.delete('/:id', deleteUnit);
+router.get('/units', authenticateAdmin as RequestHandler, getUnits as RequestHandler);
+router.post('/units', authenticateAdmin as RequestHandler, createUnit as RequestHandler);
+router.put('/units/:id', authenticateAdmin as RequestHandler, updateUnit as RequestHandler);
+router.delete('/units/:id', authenticateAdmin as RequestHandler, deleteUnit as RequestHandler);
 
 export default router;
