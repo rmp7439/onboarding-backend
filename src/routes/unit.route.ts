@@ -4,11 +4,13 @@ import { authenticateAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.use('/units', authenticateAdmin);
+// Apply authentication middleware to all unit management routes
+router.use(authenticateAdmin);
 
-router.get('/units', getUnits);
-router.post('/units', createUnit);
-router.put('/units/:id', updateUnit);
-router.delete('/units/:id', deleteUnit);
+// Paths are defined relative to where this router is mounted (/units)
+router.get('/', getUnits);
+router.post('/', createUnit);
+router.put('/:id', updateUnit);
+router.delete('/:id', deleteUnit);
 
 export default router;
