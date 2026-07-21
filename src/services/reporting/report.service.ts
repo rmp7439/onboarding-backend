@@ -6,6 +6,8 @@ export interface ReportFilters {
   day?: string;
   month?: string;
   year?: string;
+  unit?: string;
+  userId?: string;
 }
 
 const DOC_TYPES = [
@@ -54,13 +56,65 @@ function buildDateFilter(filters: ReportFilters) {
   };
 }
 
-function renderEmployeeProfileLayout(doc: typeof PDFDocument, employee: any, baseUrl: string) {
+async function buildReportFilter(filters: ReportFilters) {
+  const where: any = {};
+
+  if (filters.year) {
+    const year = parseInt(filters.year, 10);
+    if (filters.month) {
+      const month = parseInt(filters.month, 10) - 1; // 0-indexed in JS
+      if (filters.day) {
+        const day = parseInt(filters.day, 10);
+        where.joiningDate = {
+          gte: new Date(year, month, day),
+          lt: new Date(year, month, day + 1),
+        };
+      } else {
+        where.joiningDate = {
+          gte: new Date(year, month, 1),
+          lt: new Date(year, month + 1, 1),
+        };
+      }
+    } else {
+      where.joiningDate = {
+        gte: new Date(year, 0, 1),
+        lt: new Date(year + 1, 0, 1),
+      };
+    }
+  }
+
+  if (filters.unit) {
+    where.unit = filters.unit;
+  } else if (filters.userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: filters.userId },
+      include: { units: { include: { unit: true } } },
+    });
+    if (user && user.units.length > 0) {
+      const userUnits = user.units.map((u) => u.unit.name);
+      where.unit = { in: userUnits };
+    } else {
+      // If user has no units assigned, they shouldn't match any employees
+      where.unit = { in: [] };
+    }
+  }
+
+  return where;
+}
+
+function renderEmployeeProfileLayout(
+  doc: typeof PDFDocument,
+  employee: any,
+  baseUrl: string,
+) {
   // Header
   doc.fontSize(20).text("Employee Profile", { align: "center" });
   doc.moveDown();
 
   // Status & Code
-  doc.fontSize(12).font("Helvetica-Bold")
+  doc
+    .fontSize(12)
+    .font("Helvetica-Bold")
     .text(`Employee Code: ${employee.employeeCode || "PENDING ASSIGNMENT"}`)
     .text(`Status: ${employee.status}`);
   doc.moveDown();
@@ -71,8 +125,11 @@ function renderEmployeeProfileLayout(doc: typeof PDFDocument, employee: any, bas
     doc.fontSize(10).font("Helvetica").fillColor("#000000");
 
     Object.entries(data).forEach(([key, value]) => {
-      doc.font("Helvetica-Bold").text(`${key}: `, { continued: true })
-         .font("Helvetica").text(`${value || "N/A"}`);
+      doc
+        .font("Helvetica-Bold")
+        .text(`${key}: `, { continued: true })
+        .font("Helvetica")
+        .text(`${value || "N/A"}`);
     });
     doc.moveDown();
   };
@@ -117,24 +174,31 @@ function renderEmployeeProfileLayout(doc: typeof PDFDocument, employee: any, bas
   });
 
   // Documents Section
-  doc.fontSize(14).font("Helvetica-Bold").fillColor("#2563eb").text("Uploaded Documents");
+  doc
+    .fontSize(14)
+    .font("Helvetica-Bold")
+    .fillColor("#2563eb")
+    .text("Uploaded Documents");
   doc.moveDown(0.5);
 
   DOC_TYPES.forEach((dt, index) => {
     const docItem = employee.documents.find((d: any) => d.type === dt.type);
-    
-    doc.fontSize(10).font("Helvetica").fillColor("#000000")
-       .text(`${index + 1}. ${dt.label}: `, { continued: true });
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .fillColor("#000000")
+      .text(`${index + 1}. ${dt.label}: `, { continued: true });
 
     if (docItem) {
       const url = `${baseUrl}/reports/document/${docItem.id}/download`;
       doc.fillColor("#2563eb").text(`View ${dt.label}`, {
         link: url,
-        underline: true
+        underline: true,
       });
     } else {
       doc.fillColor("#6b7280").text("Not Uploaded", {
-        underline: false
+        underline: false,
       });
     }
   });
@@ -142,15 +206,19 @@ function renderEmployeeProfileLayout(doc: typeof PDFDocument, employee: any, bas
 
 export class ReportService {
   static async getFilteredEmployees(filters: ReportFilters) {
-    const where = buildDateFilter(filters);
+    const where = await buildReportFilter(filters);
 
     return prisma.employee.findMany({
       where,
       orderBy: { joiningDate: "desc" },
       select: {
-        id: true, firstName: true, surname: true, employeeCode: true, joiningDate: true,
-        documents: { select: { id: true, type: true } }
-      }
+        id: true,
+        firstName: true,
+        surname: true,
+        employeeCode: true,
+        joiningDate: true,
+        documents: { select: { id: true, type: true } },
+      },
     });
   }
 
@@ -181,8 +249,7 @@ export class ReportService {
       { header: "ADDITIONAL COLUMN 1", key: "additionalCol1", width: 25 },
     ],
   ): Promise<Buffer> {
-    const where = buildDateFilter(filters);
-
+    const where = await buildReportFilter(filters);
     // INCLUDE documents in the query
     const employees = await prisma.employee.findMany({
       where,
@@ -320,7 +387,10 @@ export class ReportService {
     return Buffer.from(buffer as ArrayBuffer);
   }
 
-  static async generateEmployeePdf(employeeId: string, baseUrl: string): Promise<Buffer> {
+  static async generateEmployeePdf(
+    employeeId: string,
+    baseUrl: string,
+  ): Promise<Buffer> {
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
       include: { documents: true },
@@ -346,16 +416,20 @@ export class ReportService {
     });
   }
 
-  static async generateBulkPdf(filters: ReportFilters, baseUrl: string): Promise<Buffer> {
-    const where = buildDateFilter(filters);
-    
+  static async generateBulkPdf(
+    filters: ReportFilters,
+    baseUrl: string,
+  ): Promise<Buffer> {
+    const where = await buildReportFilter(filters);
+
     const employees = await prisma.employee.findMany({
       where,
       orderBy: { joiningDate: "desc" },
       include: { documents: true },
     });
 
-    if (!employees.length) throw new Error("No employees found for the selected filters.");
+    if (!employees.length)
+      throw new Error("No employees found for the selected filters.");
 
     return new Promise((resolve, reject) => {
       try {
