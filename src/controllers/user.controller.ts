@@ -3,12 +3,12 @@ import { UserService } from "../services/user/user.service";
 
 export const createUser: RequestHandler = async (req, res): Promise<void> => {
   try {
-    const { name, loginId, password, status, units } = req.body;
+    const { name, loginId, password, status } = req.body;
 
-    if (!name || !loginId || !password || !units || !Array.isArray(units)) {
+    if (!name || !loginId || !password) {
       res.status(400).json({
         success: false,
-        error: "Name, loginId, password, and units (array) are required",
+        error: "Name, loginId, and password are required",
       });
       return;
     }
@@ -18,12 +18,17 @@ export const createUser: RequestHandler = async (req, res): Promise<void> => {
       loginId,
       password,
       status,
-      units,
     });
 
-    res.status(201).json({ success: true, data: user });
+    res.status(201).json({
+      success: true,
+      data: user,
+    });
   } catch (error: any) {
     const statusCode = error.message.includes("unique") ? 409 : 400;
-    res.status(statusCode).json({ success: false, error: error.message });
+    res.status(statusCode).json({
+      success: false,
+      error: error.message,
+    });
   }
 };

@@ -50,7 +50,7 @@ export class AuthService {
     }
 
     const token = jwt.sign(
-      { id: user.id, loginId: user.loginId, role: "USER", units: user.units },
+      { id: user.id, loginId: user.loginId, role: "USER",},
       env.JWT_SECRET,
       { expiresIn: "1d" },
     );
@@ -62,7 +62,6 @@ export class AuthService {
         name: user.name,
         loginId: user.loginId,
         status: user.status,
-        units: user.units,
       },
     };
   }

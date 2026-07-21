@@ -8,7 +8,6 @@ export class UserService {
     loginId: string;
     password: string;
     status?: UserStatus;
-    units: string[];
   }) {
     const existing = await prisma.user.findUnique({
       where: { loginId: data.loginId },
@@ -26,7 +25,6 @@ export class UserService {
         loginId: data.loginId,
         password: hashedPassword,
         status: data.status || UserStatus.ACTIVE,
-        units: data.units,
       },
     });
 
@@ -35,7 +33,6 @@ export class UserService {
       name: user.name,
       loginId: user.loginId,
       status: user.status,
-      units: user.units,
     };
   }
 }
