@@ -6,14 +6,23 @@ import { UserService } from "../services/user/user.service";
 export const register: RequestHandler = async (req, res): Promise<void> => {
   try {
     const user = (req as any).user;
-    
+
     // Strict Backend Validation: NEVER trust the frontend
-    if (user && user.role === 'USER') {
-        const hasUnit = await UserService.checkUserHasUnitByName(user.id, req.body.unit);
-        if (!hasUnit) {
-            res.status(403).json({ success: false, error: 'Forbidden: The selected Unit is not assigned to your account.' });
-            return;
-        }
+    if (user && user.role === "USER") {
+      const hasUnit = await UserService.checkUserHasUnitByName(
+        user.id,
+        req.body.unit,
+      );
+      if (!hasUnit) {
+        res
+          .status(403)
+          .json({
+            success: false,
+            error:
+              "Forbidden: The selected Unit is not assigned to your account.",
+          });
+        return;
+      }
     }
 
     const employee = await EmployeeService.registerEmployee(req.body);
@@ -36,10 +45,16 @@ export const getEmployees: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
-export const returnForCorrection: RequestHandler = async (req, res): Promise<void> => {
+export const returnForCorrection: RequestHandler = async (
+  req,
+  res,
+): Promise<void> => {
   try {
     const { remark } = req.body;
-    const updatedEmployee = await EmployeeService.returnForCorrection(String(req.params.id), remark);
+    const updatedEmployee = await EmployeeService.returnForCorrection(
+      String(req.params.id),
+      remark,
+    );
     res.status(200).json({ success: true, data: updatedEmployee });
   } catch (error: any) {
     const statusCode = error.message.includes("not found") ? 404 : 400;
@@ -47,23 +62,46 @@ export const returnForCorrection: RequestHandler = async (req, res): Promise<voi
   }
 };
 
-export const updateEmployee: RequestHandler = async (req, res): Promise<void> => {
+export const updateEmployee: RequestHandler = async (
+  req,
+  res,
+): Promise<void> => {
   try {
     const user = (req as any).user;
-    
+
     // Strict Backend Validation: NEVER trust the frontend
-    if (user && user.role === 'USER') {
-        const hasUnit = await UserService.checkUserHasUnitByName(user.id, req.body.unit);
-        if (!hasUnit) {
-            res.status(403).json({ success: false, error: 'Forbidden: The selected Unit is not assigned to your account.' });
-            return;
-        }
+    if (user && user.role === "USER") {
+      const hasUnit = await UserService.checkUserHasUnitByName(
+        user.id,
+        req.body.unit,
+      );
+      if (!hasUnit) {
+        res
+          .status(403)
+          .json({
+            success: false,
+            error:
+              "Forbidden: The selected Unit is not assigned to your account.",
+          });
+        return;
+      }
     }
 
-    const employee = await EmployeeService.registerEmployee(req.body);
-    res.status(201).json({ success: true, data: employee });
+    const employee = await EmployeeService.updateEmployee(
+      String(req.params.id),
+      req.body,
+    );
+
+    res.status(200).json({
+      success: true,
+      data: employee,
+    });
   } catch (error: any) {
-    const statusCode = error.message.includes("already") ? 409 : (error.message.includes("not found") ? 404 : 400);
+    const statusCode = error.message.includes("already")
+      ? 409
+      : error.message.includes("not found")
+        ? 404
+        : 400;
     res.status(statusCode).json({ success: false, error: error.message });
   }
 };
@@ -147,7 +185,7 @@ export const updateStatus: RequestHandler = async (req, res): Promise<void> => {
     const updatedEmployee = await EmployeeService.updateEmployeeStatus(
       String(id),
       status,
-      rejectReason
+      rejectReason,
     );
     res.status(200).json({ success: true, data: updatedEmployee });
   } catch (error: any) {
