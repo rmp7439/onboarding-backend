@@ -1,18 +1,14 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/user/user.service';
 
+const MOBILE_REGEX = /^[6-9]\d{9}$/;
+
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await UserService.getUsers();
     res.status(200).json({ success: true, data: users });
   } catch (error: any) {
-    console.error("GET USERS ERROR:", error);
-
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      stack: process.env.NODE_ENV === "development" ? error.stack : undefined
-    });
+    res.status(500).json({ success: false, error: 'Failed to fetch users.' });
   }
 };
 
@@ -21,6 +17,10 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
     const { name, mobile, password } = req.body;
     if (!name || !mobile || !password) {
       res.status(400).json({ success: false, error: 'Name, mobile, and password are required.' });
+      return;
+    }
+    if (!MOBILE_REGEX.test(mobile)) {
+      res.status(400).json({ success: false, error: 'Please enter a valid 10-digit mobile number.' });
       return;
     }
     const user = await UserService.createUser(req.body);
@@ -34,7 +34,10 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    // FIX: Cast id to String
+    if (req.body.mobile && !MOBILE_REGEX.test(req.body.mobile)) {
+      res.status(400).json({ success: false, error: 'Please enter a valid 10-digit mobile number.' });
+      return;
+    }
     const user = await UserService.updateUser(String(id), req.body);
     res.status(200).json({ success: true, data: user });
   } catch (error: any) {
@@ -46,7 +49,6 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    // FIX: Cast id to String
     await UserService.deleteUser(String(id));
     res.status(200).json({ success: true, data: { deleted: true } });
   } catch (error: any) {
@@ -64,7 +66,6 @@ export const assignUnits = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    // FIX: Cast id to String
     const updatedUser = await UserService.assignUnits(String(id), unitIds);
     res.status(200).json({ success: true, data: updatedUser });
   } catch (error: any) {

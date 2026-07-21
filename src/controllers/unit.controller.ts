@@ -13,11 +13,11 @@ export const getUnits = async (req: Request, res: Response): Promise<void> => {
 export const createUnit = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name } = req.body;
-    if (!name) {
-      res.status(400).json({ success: false, error: 'Unit name is required.' });
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      res.status(400).json({ success: false, error: 'Unit name is required and cannot be empty.' });
       return;
     }
-    const unit = await UnitService.createUnit(name);
+    const unit = await UnitService.createUnit(name.trim());
     res.status(201).json({ success: true, data: unit });
   } catch (error: any) {
     const statusCode = error.message.includes('already exists') ? 409 : 400;
@@ -29,12 +29,11 @@ export const updateUnit = async (req: Request, res: Response): Promise<void> => 
   try {
     const { id } = req.params;
     const { name } = req.body;
-    if (!name) {
-      res.status(400).json({ success: false, error: 'Unit name is required.' });
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      res.status(400).json({ success: false, error: 'Unit name is required and cannot be empty.' });
       return;
     }
-    // FIX: Cast id to String
-    const unit = await UnitService.updateUnit(String(id), name);
+    const unit = await UnitService.updateUnit(String(id), name.trim());
     res.status(200).json({ success: true, data: unit });
   } catch (error: any) {
     const statusCode = error.message.includes('already exists') ? 409 : 400;
@@ -45,7 +44,6 @@ export const updateUnit = async (req: Request, res: Response): Promise<void> => 
 export const deleteUnit = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    // FIX: Cast id to String
     await UnitService.deleteUnit(String(id));
     res.status(200).json({ success: true, data: { deleted: true } });
   } catch (error: any) {

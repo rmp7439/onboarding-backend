@@ -8,21 +8,39 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  mobile    String     @unique
+  mobile    String   @unique
   password  String
-  active    Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  units     UserUnit[]
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  units UserUnit[]
+}
+
+model Unit {
+  id        String @id @default(cuid())
+  name      String @unique
+  createdAt DateTime @default(now())
+
+  users UserUnit[]
+}
+
+model UserUnit {
+  userId String
+  unitId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@id([userId, unitId])
 }
 
 model Employee {
   id                String         @id @default(cuid())
   employeeCode      String?        @unique
   status            EmployeeStatus @default(PENDING)
-  unit              String?        // NEW: Added so the unit site is persisted
   firstName         String
   surname           String
   fatherName        String
@@ -49,13 +67,14 @@ model Employee {
   emergencyName     String
   emergencyRelation String
   emergencyPhone    String
-  rejectReason      String?        
-  correctionRemark  String?        
   selfieFilename    String?
   selfieMimeType    String?
   selfieSize        Int?
   uploadedAt        DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
+  rejectReason      String?
+  correctionRemark  String?
+  unit              String?
   documents         Document[]
 
   @@index([firstName, surname])
@@ -84,22 +103,6 @@ model Document {
   employee         Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([employeeId])
-}
-
-model Unit {
-  id        String     @id @default(cuid())
-  name      String     @unique
-  createdAt DateTime   @default(now())
-  users     UserUnit[]
-}
-
-model UserUnit {
-  userId String
-  unitId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
-
-  @@id([userId, unitId])
 }
 
 enum UserStatus {
