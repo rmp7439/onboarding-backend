@@ -3,20 +3,21 @@ import { AuthService } from "../services/auth/auth.service";
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, loginId, password } = req.body;
+    // Extract 'mobile' instead of 'loginId'
+    const { email, mobile, password } = req.body;
     
-    if (loginId) {
+    if (mobile) {
       if (!password) {
-        res.status(400).json({ success: false, error: "Login ID and password are required" });
+        res.status(400).json({ success: false, error: "Mobile number and password are required" });
         return;
       }
-      const data = await AuthService.userLogin(loginId, password);
+      const data = await AuthService.userLogin(mobile, password);
       res.status(200).json({ success: true, data });
       return;
     }
 
     if (!email || !password) {
-      res.status(400).json({ success: false, error: "Email/Login ID and password are required" });
+      res.status(400).json({ success: false, error: "Email/Mobile and password are required" });
       return;
     }
 

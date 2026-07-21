@@ -33,14 +33,15 @@ export class AuthService {
     };
   }
 
-  static async userLogin(loginId: string, password: string) {
-    const user = await prisma.user.findUnique({ where: { loginId } });
+  static async userLogin(mobile: string, password: string) {
+    const user = await prisma.user.findUnique({ where: { mobile } });
 
     if (!user) {
       throw new Error("Invalid credentials");
     }
 
-    if (user.status !== "ACTIVE") {
+    // Check the boolean 'active' field instead of 'status'
+    if (!user.active) {
       throw new Error("User account is inactive");
     }
 
@@ -50,7 +51,7 @@ export class AuthService {
     }
 
     const token = jwt.sign(
-      { id: user.id, loginId: user.loginId, role: "USER",},
+      { id: user.id, mobile: user.mobile, role: "USER" },
       env.JWT_SECRET,
       { expiresIn: "1d" },
     );
@@ -60,8 +61,8 @@ export class AuthService {
       user: {
         id: user.id,
         name: user.name,
-        loginId: user.loginId,
-        status: user.status,
+        mobile: user.mobile, // Updated from loginId
+        active: user.active, // Updated from status
       },
     };
   }

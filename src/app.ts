@@ -16,7 +16,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cors({
   origin: env.CORS_ORIGIN,
-  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   credentials: true
 }));
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
