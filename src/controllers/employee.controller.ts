@@ -1,9 +1,21 @@
 import { RequestHandler } from "express";
 import { EmployeeService } from "../services/employee/employee.service";
 import { StorageService } from "../services/storage/storage.service";
+import { UserService } from "../services/user/user.service";
 
 export const register: RequestHandler = async (req, res): Promise<void> => {
   try {
+    const user = (req as any).user;
+    
+    // Strict Backend Validation: NEVER trust the frontend
+    if (user && user.role === 'USER') {
+        const hasUnit = await UserService.checkUserHasUnitByName(user.id, req.body.unit);
+        if (!hasUnit) {
+            res.status(403).json({ success: false, error: 'Forbidden: The selected Unit is not assigned to your account.' });
+            return;
+        }
+    }
+
     const employee = await EmployeeService.registerEmployee(req.body);
     res.status(201).json({ success: true, data: employee });
   } catch (error: any) {
@@ -37,9 +49,19 @@ export const returnForCorrection: RequestHandler = async (req, res): Promise<voi
 
 export const updateEmployee: RequestHandler = async (req, res): Promise<void> => {
   try {
-    const id = String(req.params.id);
-    const updatedEmployee = await EmployeeService.updateEmployee(id, req.body);
-    res.status(200).json({ success: true, data: updatedEmployee });
+    const user = (req as any).user;
+    
+    // Strict Backend Validation: NEVER trust the frontend
+    if (user && user.role === 'USER') {
+        const hasUnit = await UserService.checkUserHasUnitByName(user.id, req.body.unit);
+        if (!hasUnit) {
+            res.status(403).json({ success: false, error: 'Forbidden: The selected Unit is not assigned to your account.' });
+            return;
+        }
+    }
+
+    const employee = await EmployeeService.registerEmployee(req.body);
+    res.status(201).json({ success: true, data: employee });
   } catch (error: any) {
     const statusCode = error.message.includes("already") ? 409 : (error.message.includes("not found") ? 404 : 400);
     res.status(statusCode).json({ success: false, error: error.message });

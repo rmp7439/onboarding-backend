@@ -22,3 +22,26 @@ export const authenticateAdmin = (req: Request, res: Response, next: NextFunctio
     res.status(401).json({ success: false, error: 'Invalid or expired token.' });
   }
 };
+
+export const authenticateUser = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ success: false, error: 'Authentication required. Token missing.' });
+      return;
+    }
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, env.JWT_SECRET) as any;
+    
+    // Allow both USER and ADMIN (if admin decides to use the mobile APIs)
+    if (decoded.role !== 'USER' && decoded.role !== 'ADMIN') {
+       res.status(403).json({ success: false, error: 'Access forbidden.' });
+       return;
+    }
+    
+    (req as any).user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ success: false, error: 'Invalid or expired token.' });
+  }
+};

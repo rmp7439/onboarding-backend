@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/user/user.service';
+import { prisma } from '../config/prisma';
 
 const MOBILE_REGEX = /^[6-9]\d{9}$/;
 
@@ -71,5 +72,19 @@ export const assignUnits = async (req: Request, res: Response): Promise<void> =>
   } catch (error: any) {
     const statusCode = error.message.includes('not found') ? 404 : 400;
     res.status(statusCode).json({ success: false, error: error.message });
+  }
+};
+
+export const getMyUnits = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user.id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { units: { include: { unit: true } } }
+    });
+    const units = user?.units.map(u => u.unit.name) || [];
+    res.status(200).json({ success: true, data: units });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: 'Failed to fetch assigned units.' });
   }
 };

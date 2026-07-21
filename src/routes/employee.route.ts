@@ -17,18 +17,16 @@ import {
   validateReturnForCorrection,
   validateEmployeeUpdate
 } from '../middleware/employee.validator';
-import { authenticateAdmin } from '../middleware/auth.middleware';
-
+import { authenticateAdmin, authenticateUser } from '../middleware/auth.middleware';
 const router = Router();
 
 // ==============================
 // Public / Mobile facing
 // ==============================
-router.post('/employee/register', validateRegistration as RequestHandler, register as RequestHandler);
-router.put('/employee/:id', validateEmployeeUpdate as RequestHandler, updateEmployee as RequestHandler);
-
-router.get('/employees/search', searchEmployees as RequestHandler);
-router.get('/employee/profile/:id', getEmployeeProfile as RequestHandler);
+router.post('/employee/register', authenticateUser as RequestHandler, validateRegistration as RequestHandler, register as RequestHandler);
+router.put('/employee/:id', authenticateUser as RequestHandler, validateEmployeeUpdate as RequestHandler, updateEmployee as RequestHandler);
+router.get('/employees/search', authenticateUser as RequestHandler, searchEmployees as RequestHandler);
+router.get('/employee/profile/:id', authenticateUser as RequestHandler, getEmployeeProfile as RequestHandler);
 
 // ==============================
 // Protected Admin facing

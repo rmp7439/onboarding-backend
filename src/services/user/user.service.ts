@@ -21,6 +21,15 @@ export class UserService {
     });
   }
 
+  static async checkUserHasUnitByName(userId: string, unitName: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { units: { include: { unit: true } } }
+    });
+    if (!user) return false;
+    return user.units.some(u => u.unit.name === unitName);
+  }
+
   static async createUser(data: any) {
     const existing = await prisma.user.findUnique({ where: { mobile: data.mobile } });
     if (existing) throw new Error('Mobile number is already registered.');
