@@ -102,3 +102,21 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
     res.status(404).json({ success: false, error: error.message || 'Failed to fetch profile.' });
   }
 };
+
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+    
+    if (!password || typeof password !== 'string' || password.trim() === '') {
+      res.status(400).json({ success: false, error: 'A valid new password is required.' });
+      return;
+    }
+
+    await UserService.resetPassword(String(id), password);
+    res.status(200).json({ success: true, data: { message: "Password reset successfully." } });
+  } catch (error: any) {
+    const statusCode = error.message.includes('not found') ? 404 : 400;
+    res.status(statusCode).json({ success: false, error: error.message });
+  }
+};

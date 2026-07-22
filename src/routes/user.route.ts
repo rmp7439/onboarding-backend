@@ -6,7 +6,8 @@ import {
   deleteUser, 
   assignUnits,
   getMyUnits,
-  getMe
+  getMe,
+  resetPassword
 } from '../controllers/user.controller';
 import { authenticateAdmin, authenticateUser } from '../middleware/auth.middleware';
 
@@ -21,6 +22,7 @@ router.delete('/users/:id', authenticateAdmin as RequestHandler, deleteUser as R
 // Assignment endpoint
 router.get('/user/my-units', authenticateUser as RequestHandler, getMyUnits as RequestHandler);
 router.put('/users/:id/units', authenticateAdmin as RequestHandler, assignUnits as RequestHandler);
+router.patch('/users/:id/password', authenticateAdmin as RequestHandler, resetPassword as RequestHandler);
 
 // Profile endpoint
 router.get('/user/me', authenticateUser as RequestHandler, getMe as RequestHandler);
