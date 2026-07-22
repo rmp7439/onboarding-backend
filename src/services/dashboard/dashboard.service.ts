@@ -2,10 +2,10 @@ import { prisma } from '../../config/prisma';
 
 export class DashboardService {
   static async getDashboardStats() {
-    // Automatically assign missing or test units to 'Development'
-    const devUnit = await prisma.unit.findUnique({ where: { name: 'Development' } });
+    // Automatically assign missing units to 'Developer'
+    const devUnit = await prisma.unit.findUnique({ where: { name: 'Developer' } });
     if (!devUnit) {
-      throw new Error("Development Unit not found in the database.");
+      throw new Error("Developer Unit not found in the database.");
     }
 
     await prisma.employee.updateMany({
@@ -13,10 +13,7 @@ export class DashboardService {
         OR: [
           { unit: null },
           { unit: "" },
-          { unit: "N/A" },
-          { unit: "Developer" },
-          { unit: "Demo Unit A" },
-          { unit: "Demo Unit B" }
+          { unit: "N/A" }
         ]
       },
       data: {
@@ -24,9 +21,11 @@ export class DashboardService {
       }
     });
 
+    // Calculate the start of the current day for accurate daily tracking
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
+    // Execute queries concurrently for maximum efficiency
     const [
       total,
       pending,

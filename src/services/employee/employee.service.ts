@@ -19,13 +19,6 @@ export class EmployeeService {
       if (existingEmployee.pan === data.pan) throw new Error('PAN already registered.');
     }
 
-    // Automatically assign 'Development' unit if missing, placeholder, or unintended test value
-    if (!data.unit || data.unit === "" || data.unit === "N/A" || data.unit === "Developer" || data.unit === "Demo Unit A" || data.unit === "Demo Unit B") {
-      const devUnit = await prisma.unit.findUnique({ where: { name: 'Development' } });
-      if (!devUnit) throw new Error("Development Unit not found in the database.");
-      data.unit = devUnit.name;
-    }
-
     const dateOfBirth = new Date(data.dateOfBirth);
     const joiningDate = new Date(data.joiningDate);
 
@@ -41,9 +34,10 @@ export class EmployeeService {
   }
 
   static async getEmployeeProfile(id: string) {
-    const employee = await this.getEmployeeById(id);
-    return employee;
-  }
+  const employee = await this.getEmployeeById(id);
+
+  return employee;
+}
 
   static async returnForCorrection(id: string, remark: string): Promise<Employee> {
     await this.getEmployeeById(id);
@@ -59,6 +53,7 @@ export class EmployeeService {
   static async updateEmployee(id: string, data: Prisma.EmployeeUpdateInput): Promise<Employee> {
     const employee = await this.getEmployeeById(id);
 
+    // Validate unique constraints if user attempts to modify them
     const orConditions = [];
     if (data.mobile && data.mobile !== employee.mobile) orConditions.push({ mobile: data.mobile as string });
     if (data.aadhaar && data.aadhaar !== employee.aadhaar) orConditions.push({ aadhaar: data.aadhaar as string });
@@ -73,13 +68,15 @@ export class EmployeeService {
       }
     }
 
+    // Format Date strings properly before updating
     const updateData: any = { ...data };
     if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth as string | Date);
     if (data.joiningDate) updateData.joiningDate = new Date(data.joiningDate as string | Date);
 
+    // Explicitly reset the status to PENDING and clear the correctionRemark
     updateData.status = EmployeeStatus.PENDING;
     updateData.correctionRemark = null;
-    updateData.rejectReason = null; 
+    updateData.rejectReason = null; // Also clear rejection reasons to be clean
 
     return prisma.employee.update({
       where: { id },
@@ -113,11 +110,37 @@ export class EmployeeService {
     }));
   }
 
+  static async getMyUnitEmployees(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { units: { include: { unit: true } } }
+    });
+    
+    if (!user || user.units.length === 0) return [];
+    
+    const unitNames = user.units.map(u => u.unit.name);
+    
+    return prisma.employee.findMany({
+      where: { unit: { in: unitNames } },
+      orderBy: { uploadedAt: 'desc' },
+      select: {
+        id: true,
+        firstName: true,
+        surname: true,
+        employeeCode: true,
+        mobile: true,
+        status: true,
+        uploadedAt: true,
+        updatedAt: true
+      }
+    });
+  }
+
   static async getAllEmployees(searchQuery?: string): Promise<Employee[]> {
-    // Automatically assign missing or test units to 'Development'
-    const devUnit = await prisma.unit.findUnique({ where: { name: 'Development' } });
+    // Automatically assign missing units to 'Developer'
+    const devUnit = await prisma.unit.findUnique({ where: { name: 'Developer' } });
     if (!devUnit) {
-      throw new Error("Development Unit not found in the database.");
+      throw new Error("Developer Unit not found in the database.");
     }
 
     await prisma.employee.updateMany({
@@ -125,10 +148,7 @@ export class EmployeeService {
         OR: [
           { unit: null },
           { unit: "" },
-          { unit: "N/A" },
-          { unit: "Developer" },
-          { unit: "Demo Unit A" },
-          { unit: "Demo Unit B" }
+          { unit: "N/A" }
         ]
       },
       data: {
