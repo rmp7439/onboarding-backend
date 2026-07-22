@@ -92,6 +92,7 @@ export class AuthService {
     };
   }
 
+  // Add to the bottom of createInitialAdmin()
   static async createInitialAdmin() {
     const exists = await prisma.admin.count();
     if (exists === 0) {
@@ -101,6 +102,36 @@ export class AuthService {
           email: "admin@example.com",
           password: hashedPassword,
           name: "System Admin",
+        },
+      });
+    }
+
+    // Development-only Field Manager account used for testing the mobile app.
+    // Safe because it only creates the user if it doesn't already exist.
+    const devUnitName = "Development";
+    let unit = await prisma.unit.findUnique({ where: { name: devUnitName } });
+    if (!unit) {
+      unit = await prisma.unit.create({ data: { name: devUnitName } });
+    }
+
+    const devMobile = "9876543210";
+    const userExists = await prisma.user.findUnique({
+      where: { mobile: devMobile },
+    });
+
+    if (!userExists) {
+      const hashedUserPassword = await bcrypt.hash("password123", 10);
+      await prisma.user.create({
+        data: {
+          name: "Developer",
+          mobile: devMobile,
+          password: hashedUserPassword,
+          active: true,
+          units: {
+            create: {
+              unitId: unit.id,
+            },
+          },
         },
       });
     }
