@@ -14,6 +14,7 @@ model User {
   mobile    String   @unique
   password  String
   active    Boolean  @default(true)
+  isProtected Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -10,6 +10,7 @@ export class UserService {
         name: true,
         mobile: true,
         active: true,
+        isProtected: true,
         createdAt: true,
         updatedAt: true,
         units: {
@@ -50,13 +51,11 @@ export class UserService {
   }
 
   static async createUser(data: any) {
-    // Validate uniqueness of mobile
     const existingMobile = await prisma.user.findUnique({
       where: { mobile: data.mobile },
     });
     if (existingMobile) throw new Error("Mobile number is already registered.");
 
-    // Validate uniqueness of new userId
     const existingUserId = await prisma.user.findUnique({
       where: { userId: data.userId },
     });
@@ -66,7 +65,7 @@ export class UserService {
 
     return prisma.user.create({
       data: {
-        userId: data.userId, // Added
+        userId: data.userId,
         name: data.name,
         mobile: data.mobile,
         password: hashedPassword,
@@ -78,7 +77,8 @@ export class UserService {
         name: true,
         mobile: true,
         active: true,
-      }, // Added userId
+        isProtected: true,
+      },
     });
   }
 
@@ -100,6 +100,12 @@ export class UserService {
     }
 
     const updateData = { ...data };
+    
+    // Security: Prevent overriding the isProtected flag via the UI/API
+    if ('isProtected' in updateData) {
+      delete updateData.isProtected;
+    }
+
     if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 10);
     }
@@ -113,11 +119,18 @@ export class UserService {
         name: true,
         mobile: true,
         active: true,
-      }, // Added userId
+        isProtected: true,
+      },
     });
   }
 
   static async deleteUser(id: string) {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) throw new Error("User not found.");
+    if (user.isProtected) {
+      throw new Error("This is a protected support account and cannot be deleted.");
+    }
+
     return prisma.user.delete({
       where: { id },
     });
@@ -150,6 +163,9 @@ export class UserService {
   static async resetPassword(id: string, newPassword: string) {
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) throw new Error("User not found.");
+    if (user.isProtected) {
+      throw new Error("The password for this protected support account cannot be reset from the admin portal.");
+    }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
@@ -162,6 +178,7 @@ export class UserService {
         name: true,
         mobile: true,
         active: true,
+        isProtected: true,
       },
     });
   }
