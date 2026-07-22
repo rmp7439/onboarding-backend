@@ -13,7 +13,7 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
           id: emp.id,
           code: emp.employeeCode || 'Pending Assignment',
           name: `${emp.firstName} ${emp.surname}`,
-          unit: emp.unit, // Replace hardcoded 'N/A'
+          unit: emp.unit, // Replaced hardcoded 'N/A' to fetch the DB value
           phone: emp.mobile,
           status: emp.status,
           joiningDate: emp.joiningDate.toISOString().split('T')[0]
