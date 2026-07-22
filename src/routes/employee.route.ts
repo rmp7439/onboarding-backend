@@ -8,7 +8,8 @@ import {
   getEmployeeProfile,
   searchEmployees,
   returnForCorrection,
-  updateEmployee
+  updateEmployee,
+  getMyApplications
 } from '../controllers/employee.controller';
 import { 
   validateRegistration, 
@@ -27,6 +28,7 @@ router.post('/employee/register', authenticateUser as RequestHandler, validateRe
 router.put('/employee/:id', authenticateUser as RequestHandler, validateEmployeeUpdate as RequestHandler, updateEmployee as RequestHandler);
 router.get('/employees/search', authenticateUser as RequestHandler, searchEmployees as RequestHandler);
 router.get('/employee/profile/:id', authenticateUser as RequestHandler, getEmployeeProfile as RequestHandler);
+router.get('/employee/my-applications', authenticateUser as RequestHandler, getMyApplications as RequestHandler);
 
 // ==============================
 // Protected Admin facing

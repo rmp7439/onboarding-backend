@@ -110,6 +110,32 @@ export class EmployeeService {
     }));
   }
 
+  static async getMyUnitEmployees(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { units: { include: { unit: true } } }
+    });
+    
+    if (!user || user.units.length === 0) return [];
+    
+    const unitNames = user.units.map(u => u.unit.name);
+    
+    return prisma.employee.findMany({
+      where: { unit: { in: unitNames } },
+      orderBy: { uploadedAt: 'desc' },
+      select: {
+        id: true,
+        firstName: true,
+        surname: true,
+        employeeCode: true,
+        mobile: true,
+        status: true,
+        uploadedAt: true,
+        updatedAt: true
+      }
+    });
+  }
+
   static async getAllEmployees(searchQuery?: string): Promise<Employee[]> {
     const where: Prisma.EmployeeWhereInput = {};
     

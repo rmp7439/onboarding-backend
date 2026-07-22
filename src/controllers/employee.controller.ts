@@ -33,6 +33,16 @@ export const register: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
+export const getMyApplications: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const userId = (req as any).user.id;
+    const employees = await EmployeeService.getMyUnitEmployees(userId);
+    res.status(200).json({ success: true, data: employees });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: "Failed to fetch applications." });
+  }
+};
+
 export const getEmployees: RequestHandler = async (req, res): Promise<void> => {
   try {
     const search = req.query.search ? String(req.query.search) : undefined;
