@@ -36,20 +36,23 @@ export class AuthService {
   static async userLogin(mobile: string, password: string) {
     const user = await prisma.user.findUnique({ where: { mobile } });
 
+    // Reject if user doesn't exist
     if (!user) {
-      throw new Error("Invalid credentials");
+      throw new Error("Invalid mobile number or password.");
     }
 
-    // Check the boolean 'active' field instead of 'status'
+    // Reject if user is inactive, keeping the generic error to avoid data exposure
     if (!user.active) {
-      throw new Error("User account is inactive");
+      throw new Error("Invalid mobile number or password.");
     }
 
+    // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      throw new Error("Invalid credentials");
+      throw new Error("Invalid mobile number or password.");
     }
 
+    // Issue JWT only upon verified completion
     const token = jwt.sign(
       { id: user.id, mobile: user.mobile, role: "USER" },
       env.JWT_SECRET,
@@ -61,13 +64,12 @@ export class AuthService {
       user: {
         id: user.id,
         name: user.name,
-        mobile: user.mobile, // Updated from loginId
-        active: user.active, // Updated from status
+        mobile: user.mobile,
+        active: user.active,
       },
     };
   }
 
-  // Add to AuthService class
   static async employeeLogin(mobile: string, otp: string) {
     if (otp !== "123456") {
       throw new Error("Invalid OTP");
@@ -92,7 +94,7 @@ export class AuthService {
     };
   }
 
-  // Add to the bottom of createInitialAdmin()
+  // Purely creates system admin; ensures no field managers are seeded here.
   static async createInitialAdmin() {
     const exists = await prisma.admin.count();
     if (exists === 0) {
@@ -102,36 +104,6 @@ export class AuthService {
           email: "admin@example.com",
           password: hashedPassword,
           name: "System Admin",
-        },
-      });
-    }
-
-    // Development-only Field Manager account used for testing the mobile app.
-    // Safe because it only creates the user if it doesn't already exist.
-    const devUnitName = "Development";
-    let unit = await prisma.unit.findUnique({ where: { name: devUnitName } });
-    if (!unit) {
-      unit = await prisma.unit.create({ data: { name: devUnitName } });
-    }
-
-    const devMobile = "9876543210";
-    const userExists = await prisma.user.findUnique({
-      where: { mobile: devMobile },
-    });
-
-    if (!userExists) {
-      const hashedUserPassword = await bcrypt.hash("password123", 10);
-      await prisma.user.create({
-        data: {
-          name: "Developer",
-          mobile: devMobile,
-          password: hashedUserPassword,
-          active: true,
-          units: {
-            create: {
-              unitId: unit.id,
-            },
-          },
         },
       });
     }
