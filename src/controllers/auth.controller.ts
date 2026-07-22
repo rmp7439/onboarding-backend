@@ -47,3 +47,26 @@ export const employeeLogin = async (req: Request, res: Response): Promise<void> 
     res.status(401).json({ success: false, error: message });
   }
 };
+
+export const changeAdminPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const adminId = (req as any).admin.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ success: false, error: "Current and new passwords are required." });
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      res.status(400).json({ success: false, error: "New password must be different from current password." });
+      return;
+    }
+
+    await AuthService.changeAdminPassword(adminId, currentPassword, newPassword);
+    res.status(200).json({ success: true, data: { message: "Password updated successfully." } });
+  } catch (error: any) {
+    const statusCode = error.message.includes('Incorrect') ? 401 : 400;
+    res.status(statusCode).json({ success: false, error: error.message });
+  }
+};
