@@ -15,15 +15,19 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
 
 export const createUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, mobile, password } = req.body;
-    if (!name || !mobile || !password) {
-      res.status(400).json({ success: false, error: 'Name, mobile, and password are required.' });
+    const { userId, name, mobile, password } = req.body;
+    
+    // Validate new userId requirement
+    if (!userId || !name || !mobile || !password) {
+      res.status(400).json({ success: false, error: 'User ID, name, mobile, and password are required.' });
       return;
     }
+    
     if (!MOBILE_REGEX.test(mobile)) {
       res.status(400).json({ success: false, error: 'Please enter a valid 10-digit mobile number.' });
       return;
     }
+    
     const user = await UserService.createUser(req.body);
     res.status(201).json({ success: true, data: user });
   } catch (error: any) {

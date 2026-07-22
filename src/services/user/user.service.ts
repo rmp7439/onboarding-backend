@@ -6,6 +6,7 @@ export class UserService {
     return prisma.user.findMany({
       select: {
         id: true,
+        userId: true,
         name: true,
         mobile: true,
         active: true,
@@ -23,25 +24,19 @@ export class UserService {
 
   static async getMe(userId: string) {
     const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        units: {
-          include: { unit: true }
-        }
-      }
+      where: { id: userId }, // Note: This userId variable refers to the CUID primary key from the JWT token
+      include: { units: { include: { unit: true } } }
     });
 
     if (!user) throw new Error('User not found.');
 
     return {
       id: user.id,
+      userId: user.userId, // Added
       name: user.name,
       mobile: user.mobile,
       role: 'USER',
-      units: user.units.map(u => ({
-        id: u.unit.id,
-        name: u.unit.name
-      }))
+      units: user.units.map(u => ({ id: u.unit.id, name: u.unit.name }))
     };
   }
 
@@ -55,19 +50,25 @@ export class UserService {
   }
 
   static async createUser(data: any) {
-    const existing = await prisma.user.findUnique({ where: { mobile: data.mobile } });
-    if (existing) throw new Error('Mobile number is already registered.');
+    // Validate uniqueness of mobile
+    const existingMobile = await prisma.user.findUnique({ where: { mobile: data.mobile } });
+    if (existingMobile) throw new Error('Mobile number is already registered.');
+
+    // Validate uniqueness of new userId
+    const existingUserId = await prisma.user.findUnique({ where: { userId: data.userId } });
+    if (existingUserId) throw new Error('User ID is already registered.');
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
     
     return prisma.user.create({
       data: {
+        userId: data.userId, // Added
         name: data.name,
         mobile: data.mobile,
         password: hashedPassword,
         active: data.active !== undefined ? data.active : true
       },
-      select: { id: true, name: true, mobile: true, active: true }
+      select: { id: true, userId: true, name: true, mobile: true, active: true } // Added userId
     });
   }
 
@@ -75,6 +76,11 @@ export class UserService {
     if (data.mobile) {
       const existing = await prisma.user.findUnique({ where: { mobile: data.mobile } });
       if (existing && existing.id !== id) throw new Error('Mobile number is already registered.');
+    }
+    
+    if (data.userId) {
+      const existing = await prisma.user.findUnique({ where: { userId: data.userId } });
+      if (existing && existing.id !== id) throw new Error('User ID is already registered.');
     }
 
     const updateData = { ...data };
@@ -85,7 +91,7 @@ export class UserService {
     return prisma.user.update({
       where: { id },
       data: updateData,
-      select: { id: true, name: true, mobile: true, active: true }
+      select: { id: true, userId: true, name: true, mobile: true, active: true } // Added userId
     });
   }
 
