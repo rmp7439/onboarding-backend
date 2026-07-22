@@ -13,7 +13,7 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
           id: emp.id,
           code: emp.employeeCode || 'Pending Assignment',
           name: `${emp.firstName} ${emp.surname}`,
-          unit: 'N/A', // Placeholder: Unit tracking logic can be wired here if added to schema
+          unit: emp.unit, // Replace hardcoded 'N/A'
           phone: emp.mobile,
           status: emp.status,
           joiningDate: emp.joiningDate.toISOString().split('T')[0]
@@ -21,6 +21,6 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
       }
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: "Failed to fetch dashboard statistics." });
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch dashboard statistics." });
   }
 };

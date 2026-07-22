@@ -137,6 +137,25 @@ export class EmployeeService {
   }
 
   static async getAllEmployees(searchQuery?: string): Promise<Employee[]> {
+    // Automatically assign missing units to 'Developer'
+    const devUnit = await prisma.unit.findUnique({ where: { name: 'Developer' } });
+    if (!devUnit) {
+      throw new Error("Developer Unit not found in the database.");
+    }
+
+    await prisma.employee.updateMany({
+      where: {
+        OR: [
+          { unit: null },
+          { unit: "" },
+          { unit: "N/A" }
+        ]
+      },
+      data: {
+        unit: devUnit.name
+      }
+    });
+
     const where: Prisma.EmployeeWhereInput = {};
     
     if (searchQuery) {
