@@ -88,3 +88,13 @@ export const getMyUnits = async (req: Request, res: Response): Promise<void> => 
     res.status(500).json({ success: false, error: 'Failed to fetch assigned units.' });
   }
 };
+
+export const getMe = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user.id;
+    const profile = await UserService.getMe(userId);
+    res.status(200).json({ success: true, data: profile });
+  } catch (error: any) {
+    res.status(404).json({ success: false, error: error.message || 'Failed to fetch profile.' });
+  }
+};

@@ -21,6 +21,30 @@ export class UserService {
     });
   }
 
+  static async getMe(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        units: {
+          include: { unit: true }
+        }
+      }
+    });
+
+    if (!user) throw new Error('User not found.');
+
+    return {
+      id: user.id,
+      name: user.name,
+      mobile: user.mobile,
+      role: 'USER',
+      units: user.units.map(u => ({
+        id: u.unit.id,
+        name: u.unit.name
+      }))
+    };
+  }
+
   static async checkUserHasUnitByName(userId: string, unitName: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
