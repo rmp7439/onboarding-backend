@@ -7,6 +7,7 @@ import authRouter from './auth.route';
 import reportRouter from './report.route';
 import downloadRouter from './download.route';
 import adminRouter from './admin.route';
+import activityLogRouter from './activity-log.route';
 
 // 1. Import the new modules
 import userRouter from './user.route';
@@ -26,5 +27,6 @@ router.use(downloadRouter);
 router.use(userRouter);
 router.use(unitRouter);
 router.use(adminRouter);
+router.use(activityLogRouter);
 
 export default router;

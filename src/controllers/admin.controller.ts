@@ -1,6 +1,19 @@
 import { Request, Response } from "express";
 import { AdminService } from "../services/admin/admin.service";
 
+// Helper to extract the actor context cleanly
+const getActorContext = (req: Request) => {
+  const adminReq = (req as any).admin || (req as any).user;
+  return {
+    id: adminReq.id,
+    name: adminReq.name || adminReq.email,
+    email: adminReq.email,
+    role: adminReq.role,
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  };
+};
+
 export const getAdmins = async (req: Request, res: Response): Promise<void> => {
   try {
     const admins = await AdminService.getAdmins();
@@ -12,7 +25,7 @@ export const getAdmins = async (req: Request, res: Response): Promise<void> => {
 
 export const createAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
-    const admin = await AdminService.createAdmin(req.body);
+    const admin = await AdminService.createAdmin(req.body, getActorContext(req));
     res.status(201).json({ success: true, data: admin });
   } catch (error: any) {
     const statusCode = error.message.includes("exists") ? 409 : 400;
@@ -22,8 +35,7 @@ export const createAdmin = async (req: Request, res: Response): Promise<void> =>
 
 export const updateAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Force cast to String to satisfy strict Express types
-    const admin = await AdminService.updateAdmin(String(req.params.id), req.body);
+    const admin = await AdminService.updateAdmin(String(req.params.id), req.body, getActorContext(req));
     res.status(200).json({ success: true, data: admin });
   } catch (error: any) {
     const statusCode = error.message.includes("protected") ? 403 : 400;
@@ -33,8 +45,7 @@ export const updateAdmin = async (req: Request, res: Response): Promise<void> =>
 
 export const resetAdminPassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Force cast to String to satisfy strict Express types
-    await AdminService.resetAdminPassword(String(req.params.id), req.body.password);
+    await AdminService.resetAdminPassword(String(req.params.id), req.body.password, getActorContext(req));
     res.status(200).json({ success: true, data: { message: "Password reset successfully." } });
   } catch (error: any) {
     const statusCode = error.message.includes("protected") ? 403 : 400;
@@ -44,8 +55,7 @@ export const resetAdminPassword = async (req: Request, res: Response): Promise<v
 
 export const deleteAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Force cast to String to satisfy strict Express types
-    await AdminService.deleteAdmin(String(req.params.id));
+    await AdminService.deleteAdmin(String(req.params.id), getActorContext(req));
     res.status(200).json({ success: true, data: { deleted: true } });
   } catch (error: any) {
     const statusCode = error.message.includes("protected") ? 403 : 400;

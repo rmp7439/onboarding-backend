@@ -14,13 +14,11 @@ export const register: RequestHandler = async (req, res): Promise<void> => {
         req.body.unit,
       );
       if (!hasUnit) {
-        res
-          .status(403)
-          .json({
-            success: false,
-            error:
-              "Forbidden: The selected Unit is not assigned to your account.",
-          });
+        res.status(403).json({
+          success: false,
+          error:
+            "Forbidden: The selected Unit is not assigned to your account.",
+        });
         return;
       }
     }
@@ -33,13 +31,18 @@ export const register: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
-export const getMyApplications: RequestHandler = async (req, res): Promise<void> => {
+export const getMyApplications: RequestHandler = async (
+  req,
+  res,
+): Promise<void> => {
   try {
     const userId = (req as any).user.id;
     const employees = await EmployeeService.getMyUnitEmployees(userId);
     res.status(200).json({ success: true, data: employees });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: "Failed to fetch applications." });
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch applications." });
   }
 };
 
@@ -86,13 +89,11 @@ export const updateEmployee: RequestHandler = async (
         req.body.unit,
       );
       if (!hasUnit) {
-        res
-          .status(403)
-          .json({
-            success: false,
-            error:
-              "Forbidden: The selected Unit is not assigned to your account.",
-          });
+        res.status(403).json({
+          success: false,
+          error:
+            "Forbidden: The selected Unit is not assigned to your account.",
+        });
         return;
       }
     }
@@ -218,11 +219,25 @@ export const updateCode: RequestHandler = async (req, res): Promise<void> => {
   }
 };
 
-export const adminUpdateEmployee: RequestHandler = async (req, res): Promise<void> => {
+export const adminUpdateEmployee: RequestHandler = async (
+  req,
+  res,
+): Promise<void> => {
   try {
+    const admin = (req as any).admin;
+    const actorContext = {
+      id: admin.id,
+      name: admin.name || admin.email,
+      email: admin.email,
+      role: admin.role,
+      ip: req.ip,
+      userAgent: req.get("User-Agent"),
+    };
+
     const employee = await EmployeeService.adminUpdateEmployee(
       String(req.params.id),
-      req.body
+      req.body,
+      actorContext,
     );
 
     res.status(200).json({

@@ -130,6 +130,27 @@ model Document {
   @@index([employeeId])
 }
 
+model ActivityLog {
+  id          String   @id @default(cuid())
+  action      String   // e.g., "EMPLOYEE_UPDATED", "ADMIN_CREATED"
+  actorId     String
+  actorName   String
+  actorEmail  String
+  actorRole   String
+  targetId    String?
+  targetName  String?
+  targetType  String?  // e.g., "EMPLOYEE", "ADMIN", "DOCUMENT"
+  changes     Json?    // Stores array of { field, old, new }
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([targetId])
+  @@index([action])
+}
+
 enum UserStatus {
   ACTIVE
   INACTIVE
