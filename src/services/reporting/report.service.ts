@@ -149,6 +149,7 @@ function renderEmployeeProfileLayout(
     PAN: employee.pan,
     UAN: employee.uan,
     ESIC: employee.esic,
+    "Driving License": employee.drivingLicense
   });
 
   addSection("Address Details", {
@@ -282,6 +283,7 @@ export class ReportService {
       { header: "AADHAAR NO", key: "aadhaarNo", width: 20 },
       { header: "PF NUMBER", key: "pfNumber", width: 20 },
       { header: "ESI NO", key: "esiNo", width: 20 },
+      { header: "DRIVING LICENCE", key: "drivingLicence", width: 20 },
       { header: "PAN NO", key: "panNo", width: 15 },
       { header: "AADHAAR STATE CODE", key: "aadhaarStateCode", width: 15 },
       { header: "UAN NO", key: "uanNo", width: 20 },
@@ -348,6 +350,7 @@ export class ReportService {
         aadhaarNo: emp.aadhaar || "",
         pfNumber: "",
         esiNo: emp.esic || "",
+        drivingLicence: emp.drivingLicence || "",
         panNo: emp.pan || "",
         aadhaarStateCode: "",
         uanNo: emp.uan || "",

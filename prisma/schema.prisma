@@ -57,6 +57,7 @@ model Employee {
   pan               String?        @unique
   uan               String?
   esic              String?
+  drivingLicence    String?
   permanentAddress  String
   currentAddress    String
   city              String
