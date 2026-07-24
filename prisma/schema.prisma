@@ -124,6 +124,7 @@ enum EmployeeStatus {
 enum Gender {
   MALE
   FEMALE
+  OTHER
 }
 
 enum DocumentType {
