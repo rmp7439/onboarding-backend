@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 export const validateRegistration = (req: Request, res: Response, next: NextFunction): void => {
   const requiredFields = [
     'unit', 
-    'firstName', 'surname', 'fatherName', 'gender', 'bloodGroup', 'education',
+    'firstName', 'surname', 'fatherName', 'gender', 'bloodGroup', 'education', 'maritalStatus',
     'dateOfBirth', 'joiningDate', 'mobile', 'aadhaar', 
     'permanentAddress', 'currentAddress', 'city', 'state', 'pinCode', 
     'bankName', 'accountNumber', 'ifsc', 'branch', 'micr', 
@@ -77,7 +77,7 @@ export const validateReturnForCorrection = (req: Request, res: Response, next: N
 export const validateEmployeeUpdate = (req: Request, res: Response, next: NextFunction): void => {
   const requiredFields = [
     'unit', 
-    'firstName', 'surname', 'fatherName', 'gender', 'bloodGroup', 
+    'firstName', 'surname', 'fatherName', 'gender', 'bloodGroup', 'education', 'maritalStatus',
     'dateOfBirth', 'joiningDate', 'mobile', 'aadhaar', 
     'permanentAddress', 'currentAddress', 'city', 'state', 'pinCode', 
     'bankName', 'accountNumber', 'ifsc', 'branch', 'micr', 

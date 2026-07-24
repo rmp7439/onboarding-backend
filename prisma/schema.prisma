@@ -50,6 +50,7 @@ model Employee {
   husbandName       String?
   gender            Gender
   bloodGroup        BloodGroup
+  maritalStatus     MaritalStatus @default(SINGLE)
   education         HighestEducation @default(OTHER)
   dateOfBirth       DateTime
   joiningDate       DateTime
@@ -160,4 +161,11 @@ enum HighestEducation {
   POST_GRADUATE
   DOCTORATE
   OTHER
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
 }
