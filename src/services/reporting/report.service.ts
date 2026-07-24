@@ -120,37 +120,57 @@ function renderEmployeeProfileLayout(
   doc.moveDown();
 
   const addSection = (title: string, data: Record<string, any>) => {
+    // Check if we need a page break before starting a new section to avoid splitting headers
+    if (doc.y > doc.page.height - 100) {
+      doc.addPage();
+    }
+    
     doc.fontSize(14).font("Helvetica-Bold").fillColor("#2563eb").text(title);
     doc.moveDown(0.5);
     doc.fontSize(10).font("Helvetica").fillColor("#000000");
 
     Object.entries(data).forEach(([key, value]) => {
+      // Calculate height of the text to be added
+      const text = `${value || "N/A"}`;
+      const options = { continued: false, width: doc.page.width - 150 };
+      const height = doc.heightOfString(`${key}: ${text}`, options);
+
+      // Add page break if the text will overflow
+      if (doc.y + height > doc.page.height - 50) {
+        doc.addPage();
+      }
+
       doc
         .font("Helvetica-Bold")
         .text(`${key}: `, { continued: true })
         .font("Helvetica")
-        .text(`${value || "N/A"}`);
+        .text(text, options);
     });
     doc.moveDown();
   };
 
+  const formatEnum = (str: string | null) => {
+    if (!str) return "N/A";
+    return str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+  };
+
   addSection("Personal Details", {
-    Name: `${employee.firstName} ${employee.surname}`,
+    "Name": `${employee.firstName} ${employee.surname}`,
     "Father Name": employee.fatherName,
     "Husband Name": employee.husbandName,
-    Gender: employee.gender,
-    "Blood Group": employee.bloodGroup,
-    "Marital Status": employee.maritalStatus,
-    Education: employee.education,
+    "Gender": formatEnum(employee.gender),
+    "Blood Group": formatEnum(employee.bloodGroup),
+    "Marital Status": formatEnum(employee.maritalStatus),
+    "Education": formatEnum(employee.education),
     "Date of Birth": employee.dateOfBirth.toISOString().split("T")[0],
     "Phone Number": employee.mobile,
   });
 
   addSection("Identity Information", {
-    Aadhaar: employee.aadhaar,
-    PAN: employee.pan,
-    UAN: employee.uan,
-    ESIC: employee.esic,
+    "Aadhaar": employee.aadhaar,
+    "PAN": employee.pan,
+    "UAN": employee.uan,
+    "ESIC": employee.esic,
     "Driving Licence": employee.drivingLicence,
   });
 
@@ -175,19 +195,23 @@ function renderEmployeeProfileLayout(
   });
 
   addSection("Emergency Contact", {
-    Name: employee.emergencyName,
-    Relationship: employee.emergencyRelation,
-    Phone: employee.emergencyPhone,
+    "Name": employee.emergencyName,
+    "Relationship": employee.emergencyRelation,
+    "Phone": employee.emergencyPhone,
   });
 
   addSection("Nominee Details", {
     "Nominee Name": employee.nomineeName,
-    Relationship: employee.nomineeRelation,
+    "Relationship": employee.nomineeRelation,
     "Mobile Number": employee.nomineeMobile,
-    Percentage: employee.nomineePercentage ? `${employee.nomineePercentage}%` : "N/A",
+    "Percentage": employee.nomineePercentage ? `${employee.nomineePercentage}%` : "N/A",
   });
 
   // Documents Section
+  if (doc.y > doc.page.height - 150) {
+    doc.addPage();
+  }
+  
   doc
     .fontSize(14)
     .font("Helvetica-Bold")
@@ -196,6 +220,10 @@ function renderEmployeeProfileLayout(
   doc.moveDown(0.5);
 
   DOC_TYPES.forEach((dt, index) => {
+    if (doc.y > doc.page.height - 50) {
+      doc.addPage();
+    }
+    
     const docItem = employee.documents.find((d: any) => d.type === dt.type);
 
     doc
