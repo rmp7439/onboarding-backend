@@ -43,48 +43,53 @@ export const downloadSelfie = async (req: Request, res: Response): Promise<void>
 
 export const downloadMergedDocument = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Explicitly cast to string to satisfy Prisma's strict typing
+    // Explicitly cast to string to fix TS errors and satisfy Prisma's strict typing
     const employeeId = String(req.params.employeeId);
     const type = String(req.params.type) as DocumentType;
 
-    if (!Object.values(DocumentType).includes(type as DocumentType)) {
+    if (!Object.values(DocumentType).includes(type)) {
       res.status(400).json({ success: false, error: "Invalid document type." });
       return;
     }
 
     const employee = await prisma.employee.findUnique({
-      where: { id: employeeId }, // Error 1 resolved
+      where: { id: employeeId },
       include: { 
         documents: { 
-          where: { type: type as DocumentType },
-          orderBy: { uploadedAt: 'asc' } 
+          where: { type },
+          orderBy: { uploadedAt: 'asc' } // Enforce chronological upload order
         } 
       }
     });
 
-    // Errors 2 & 3 resolved automatically because Prisma can now properly infer the `include`
     if (!employee || employee.documents.length === 0) {
       res.status(404).json({ success: false, error: "Documents not found." });
       return;
     }
 
     const documents = employee.documents;
-    const prefix = employee.employeeCode && employee.employeeCode !== "Pending Assignment" ? employee.employeeCode : "EMP";
-    const filename = `${prefix}_${type}.pdf`;
 
-    // Ensure headers dictate PDF handling in browsers
+    // Format: EMPLOYEE_NAME_DOCUMENT_TYPE.pdf
+    const rawName = `${employee.firstName} ${employee.surname}`;
+    const safeName = rawName.trim().toUpperCase().replace(/\s+/g, '_');
+    const safeType = type.toUpperCase().replace(/\s+/g, '_');
+    const filename = `${safeName}_${safeType}.pdf`;
+
     res.setHeader('Content-Type', 'application/pdf');
+    // Use "inline" so browser preview works, but provide the strict filename
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
 
-    // Fast path: If it's a single image/page, just stream it directly
+    // Fast path: Single document stream
     if (documents.length === 1) {
       const signedUrl = await StorageService.getSignedUrl(documents[0].storedFilename);
       const response = await axios.get(signedUrl, { responseType: 'arraybuffer' });
+      
+      res.setHeader('Content-Length', response.data.byteLength);
       res.send(Buffer.from(response.data));
       return;
     }
 
-    // Multi-page document: Merge them together using pdf-lib
+    // Multi-page merging
     const mergedPdf = await PDFDocument.create();
     
     for (const doc of documents) {
@@ -97,12 +102,16 @@ export const downloadMergedDocument = async (req: Request, res: Response): Promi
         copiedPages.forEach((page) => mergedPdf.addPage(page));
       } catch (err) {
         console.error(`Failed to merge document page ${doc.id}:`, err);
-        throw new Error("Corrupted document page encountered.");
+        res.status(500).json({ success: false, error: `Corrupted document page encountered (ID: ${doc.id}).` });
+        return;
       }
     }
 
     const mergedPdfBytes = await mergedPdf.save();
-    res.send(Buffer.from(mergedPdfBytes));
+    const pdfBuffer = Buffer.from(mergedPdfBytes);
+
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.send(pdfBuffer);
 
   } catch (error) {
     console.error("Merge error:", error);

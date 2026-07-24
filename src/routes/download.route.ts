@@ -7,7 +7,7 @@ const router = Router();
 router.get('/document/:id/download', authenticateAdmin, downloadDocument);
 router.get('/employee/:id/selfie/download', authenticateAdmin, downloadSelfie);
 
-// NEW: Merged Multi-page PDF Download
+// Add the new merged endpoint
 router.get('/employee/:employeeId/document/:type/merged', authenticateAdmin, downloadMergedDocument);
 
 export default router;
