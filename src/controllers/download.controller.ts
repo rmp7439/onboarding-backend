@@ -43,7 +43,6 @@ export const downloadSelfie = async (req: Request, res: Response): Promise<void>
 
 export const downloadMergedDocument = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Explicitly cast to string to fix TS errors and satisfy Prisma's strict typing
     const employeeId = String(req.params.employeeId);
     const type = String(req.params.type) as DocumentType;
 
@@ -57,7 +56,7 @@ export const downloadMergedDocument = async (req: Request, res: Response): Promi
       include: { 
         documents: { 
           where: { type },
-          orderBy: { uploadedAt: 'asc' } // Enforce chronological upload order
+          orderBy: { uploadedAt: 'asc' } // Ensures exact upload order (Page 1 -> Page 2 -> ...)
         } 
       }
     });
@@ -69,29 +68,39 @@ export const downloadMergedDocument = async (req: Request, res: Response): Promi
 
     const documents = employee.documents;
 
-    // Format: EMPLOYEE_NAME_DOCUMENT_TYPE.pdf
+    // --- REQUIRED DEBUG LOGGING ---
+    console.log(`\n--- DOCUMENT GENERATION DEBUG: ${type} ---`);
+    console.log(`1. Pages retrieved from DB/Storage: ${documents.length}`);
+    console.log(`2. Ordered Image Paths:`, documents.map(d => d.storedFilename));
+
+    // Format strictly: EMPLOYEE_NAME_DOCUMENT_TYPE.pdf
     const rawName = `${employee.firstName} ${employee.surname}`;
     const safeName = rawName.trim().toUpperCase().replace(/\s+/g, '_');
     const safeType = type.toUpperCase().replace(/\s+/g, '_');
     const filename = `${safeName}_${safeType}.pdf`;
 
+    // Headers mapped for proper application/pdf handling and browser preview support
     res.setHeader('Content-Type', 'application/pdf');
-    // Use "inline" so browser preview works, but provide the strict filename
-    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`); // 'inline' allows preview, frontend forces the download
 
-    // Fast path: Single document stream
+    // Fast path for single page documents
     if (documents.length === 1) {
       const signedUrl = await StorageService.getSignedUrl(documents[0].storedFilename);
       const response = await axios.get(signedUrl, { responseType: 'arraybuffer' });
       
-      res.setHeader('Content-Length', response.data.byteLength);
-      res.send(Buffer.from(response.data));
+      const pdfBuffer = Buffer.from(response.data);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      
+      console.log(`3. Pages added to PDF: 1`);
+      console.log(`4. Final PDF Page Count: 1\n---------------------------------------\n`);
+      res.send(pdfBuffer);
       return;
     }
 
-    // Multi-page merging
+    // PDF Generation Stage: Merge multi-page documents seamlessly
     const mergedPdf = await PDFDocument.create();
-    
+    let pagesAdded = 0;
+
     for (const doc of documents) {
       try {
         const signedUrl = await StorageService.getSignedUrl(doc.storedFilename);
@@ -99,10 +108,14 @@ export const downloadMergedDocument = async (req: Request, res: Response): Promi
         
         const pdfToMerge = await PDFDocument.load(response.data);
         const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
+        
+        copiedPages.forEach((page) => {
+          mergedPdf.addPage(page);
+          pagesAdded++;
+        });
       } catch (err) {
-        console.error(`Failed to merge document page ${doc.id}:`, err);
-        res.status(500).json({ success: false, error: `Corrupted document page encountered (ID: ${doc.id}).` });
+        console.error(`[ERROR] Failed to process document ID ${doc.id}:`, err);
+        res.status(500).json({ success: false, error: "Corrupted source document encountered. Cannot generate PDF." });
         return;
       }
     }
@@ -110,6 +123,11 @@ export const downloadMergedDocument = async (req: Request, res: Response): Promi
     const mergedPdfBytes = await mergedPdf.save();
     const pdfBuffer = Buffer.from(mergedPdfBytes);
 
+    // --- REQUIRED DEBUG LOGGING ---
+    console.log(`3. Pages added to PDF: ${pagesAdded}`);
+    console.log(`4. Final PDF Page Count: ${mergedPdf.getPageCount()}\n---------------------------------------\n`);
+
+    // Ensure correct Content-Length to prevent corrupted streams
     res.setHeader('Content-Length', pdfBuffer.length);
     res.send(pdfBuffer);
 

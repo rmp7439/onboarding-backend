@@ -61,82 +61,50 @@ export class UploadService {
     });
     if (!employee) throw new Error("Employee not found.");
 
-    // Check if the user already has this exact DocumentType uploaded
-    const existingDoc = await prisma.document.findFirst({
-      where: { employeeId, type },
-    });
+    // FIX: Removed the `findFirst` check that was overwriting existing pages.
+    // Every uploaded image is now appended as a new, sequential database record.
 
     const docTypeMap: Record<DocumentType, string> = {
-      AADHAAR: "AADHAR",
-      PAN: "PAN",
-      DRIVING_LICENSE: "DL",
-      BANK_PASSBOOK: "PASSBOOK",
-      EDUCATION: "EDU_PROOF",
-      VOTER_ID: "VOTER_ID",
-      DISCHARGE_BOOK: "DISCHARGE",
+      AADHAAR: "AADHAR", PAN: "PAN", DRIVING_LICENSE: "DL",
+      BANK_PASSBOOK: "PASSBOOK", EDUCATION: "EDU_PROOF",
+      VOTER_ID: "VOTER_ID", DISCHARGE_BOOK: "DISCHARGE",
     };
 
     const suffix = docTypeMap[type] || type.toString();
-    const firstName = employee.firstName
-      .trim()
-      .toUpperCase()
-      .replace(/\s+/g, "_");
+    const firstName = employee.firstName.trim().toUpperCase().replace(/\s+/g, "_");
     const lastName = employee.surname.trim().toUpperCase().replace(/\s+/g, "_");
     
-    // Add timestamp to make the filename unique so we don't accidentally overwrite in storage
+    // Use timestamp + random string to prevent filename collisions on rapid sequential uploads
     const timestamp = Date.now();
-    const targetFilename = `${firstName}_${lastName}_${suffix}_${timestamp}.pdf`;
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const targetFilename = `${firstName}_${lastName}_${suffix}_${timestamp}_${randomStr}.pdf`;
 
-    const processedMetadata =
-      await DocumentProcessorService.generateStandardizedPdf(
-        file.buffer,
-        file.mimetype,
-      );
+    // EXIF rotation, A4 scaling, and aspect-ratio preservation are already handled here by PDFKit[cite: 2]
+    const processedMetadata = await DocumentProcessorService.generateStandardizedPdf(
+      file.buffer,
+      file.mimetype,
+    );
 
     const storagePath = `employees/${employeeId}/documents/${targetFilename}`;
 
-    // 1. Upload new file safely
     await StorageService.upload(
       processedMetadata.buffer,
       storagePath,
       processedMetadata.mimeType,
     );
 
-    let document: Document;
-    const oldFilename = existingDoc?.storedFilename;
-
-    // 2 & 3. Verify upload succeeded, then Update OR Create the database record
-    if (existingDoc) {
-      document = await prisma.document.update({
-        where: { id: existingDoc.id },
-        data: {
-          storedFilename: storagePath,
-          originalFilename: targetFilename,
-          mimeType: processedMetadata.mimeType,
-          fileSize: processedMetadata.size,
-          fileExtension: processedMetadata.extension,
-        },
-      });
-    } else {
-      document = await prisma.document.create({
-        data: {
-          employeeId,
-          type,
-          storedFilename: storagePath,
-          originalFilename: targetFilename,
-          mimeType: processedMetadata.mimeType,
-          fileSize: processedMetadata.size,
-          fileExtension: processedMetadata.extension,
-        },
-      });
-    }
-
-    // 4 & 5. Delete old file from storage (record is already updated)
-    if (oldFilename && oldFilename !== storagePath) {
-      StorageService.delete(oldFilename).catch((err) =>
-        logger.error(`Failed to delete old document: ${oldFilename}`, err)
-      );
-    }
+    // FIX: Always create a new record to preserve multi-page integrity
+    const document = await prisma.document.create({
+      data: {
+        employeeId,
+        type,
+        storedFilename: storagePath,
+        originalFilename: targetFilename,
+        mimeType: processedMetadata.mimeType,
+        fileSize: processedMetadata.size,
+        fileExtension: processedMetadata.extension,
+      },
+    });
 
     return document;
   }
