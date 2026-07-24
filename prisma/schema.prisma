@@ -8,24 +8,25 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  userId    String   @unique @default(cuid())
-  name      String
-  mobile    String   @unique
-  password  String
-  active    Boolean  @default(true)
-  isProtected Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  userId      String   @unique @default(cuid())
+  name        String
+  mobile      String   @unique
+  password    String
+  active      Boolean  @default(true)
+  isProtected Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   units UserUnit[]
 }
 
 model Unit {
-  id        String @id @default(cuid())
-  name      String @unique
-  isProtected Boolean @default(false)
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  name           String   @unique
+  isProtected    Boolean  @default(false)
+  requiredFields String[] @default([])
+  createdAt      DateTime @default(now())
 
   users UserUnit[]
 }
@@ -40,57 +41,65 @@ model UserUnit {
   @@id([userId, unitId])
 }
 
+model Bank {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Employee {
-  id                String         @id @default(cuid())
-  employeeCode      String?        @unique
-  status            EmployeeStatus @default(PENDING)
-  firstName         String
-  surname           String
-  fatherName        String
-  husbandName       String?
-  gender            Gender
-  bloodGroup        BloodGroup
-  maritalStatus     MaritalStatus @default(SINGLE)
-  education         HighestEducation @default(OTHER)
-  dateOfBirth       DateTime
-  joiningDate       DateTime
-  mobile            String         @unique
-  aadhaar           String         @unique
-  pan               String?        @unique
-  uan               String?
-  esic              String?
-  drivingLicence    String?
-  permanentAddress  String
-  currentAddress    String
-  city              String
-  state             String
-  pinCode           String
+  id                     String           @id @default(cuid())
+  employeeCode           String?          @unique
+  status                 EmployeeStatus   @default(PENDING)
+  firstName              String
+  surname                String
+  fatherName             String
+  husbandName            String?
+  gender                 Gender
+  bloodGroup             BloodGroup
+  maritalStatus          MaritalStatus    @default(SINGLE)
+  education              HighestEducation @default(OTHER)
+  dateOfBirth            DateTime
+  joiningDate            DateTime
+  mobile                 String           @unique
+  aadhaar                String           @unique
+  pan                    String?          @unique
+  uan                    String?
+  esic                   String?
+  drivingLicence         String?
+  permanentAddress       String
+  currentAddress         String
+  city                   String
+  state                  String
+  pinCode                String
   permanentPoliceStation String?
   currentCity            String?
   currentState           String?
   currentPinCode         String?
-  accountHolderName String?
-  bankName          String
-  accountNumber     String
-  ifsc              String
-  branch            String?
-  micr              String?
-  emergencyName     String
-  emergencyRelation String
-  emergencyPhone    String
-  nomineeName       String?
-  nomineeRelation   String?
-  nomineeMobile     String?
-  nomineePercentage Int?
-  selfieFilename    String?
-  selfieMimeType    String?
-  selfieSize        Int?
-  uploadedAt        DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  rejectReason      String?
-  correctionRemark  String?
-  unit              String?
-  documents         Document[]
+  accountHolderName      String?
+  bankName               String
+  accountNumber          String
+  ifsc                   String
+  branch                 String?
+  micr                   String?
+  emergencyName          String
+  emergencyRelation      String
+  emergencyPhone         String
+  nomineeName            String?
+  nomineeRelation        String?
+  nomineeMobile          String?
+  nomineePercentage      Int?
+  selfieFilename         String?
+  selfieMimeType         String?
+  selfieSize             Int?
+  uploadedAt             DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  rejectReason           String?
+  correctionRemark       String?
+  unit                   String?
+  documents              Document[]
 
   @@index([firstName, surname])
 }
@@ -120,14 +129,6 @@ model Document {
   @@index([employeeId])
 }
 
-model Bank {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -143,6 +144,26 @@ enum EmployeeStatus {
 enum Gender {
   MALE
   FEMALE
+  OTHER
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+enum HighestEducation {
+  ILLITERATE
+  PRIMARY
+  SECONDARY
+  HIGHER_SECONDARY
+  ITI
+  DIPLOMA
+  GRADUATE
+  POST_GRADUATE
+  DOCTORATE
   OTHER
 }
 
@@ -165,24 +186,4 @@ enum BloodGroup {
   AB_NEGATIVE
   O_POSITIVE
   O_NEGATIVE
-}
-
-enum HighestEducation {
-  ILLITERATE
-  PRIMARY
-  SECONDARY
-  HIGHER_SECONDARY
-  ITI
-  DIPLOMA
-  GRADUATE
-  POST_GRADUATE
-  DOCTORATE
-  OTHER
-}
-
-enum MaritalStatus {
-  SINGLE
-  MARRIED
-  DIVORCED
-  WIDOWED
 }

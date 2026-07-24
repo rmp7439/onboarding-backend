@@ -7,21 +7,21 @@ export class UnitService {
     });
   }
 
-  static async createUnit(name: string) {
+  static async createUnit(name: string, requiredFields: string[] = []) {
     const existing = await prisma.unit.findUnique({ where: { name } });
     if (existing) throw new Error('Unit name already exists.');
 
     return prisma.unit.create({
-      data: { name }
+      data: { name, requiredFields }
     });
   }
 
-  static async updateUnit(id: string, name: string) {
+  static async updateUnit(id: string, name: string, requiredFields: string[] = []) {
     const existing = await prisma.unit.findUnique({ where: { id } });
     if (!existing) throw new Error('Unit not found.');
     
-    // Security: Prevent renaming of protected system units
-    if (existing.isProtected) {
+    // Security: Prevent renaming of protected system units, but allow updating requiredFields
+    if (existing.isProtected && existing.name !== name) {
       throw new Error('This protected system unit cannot be renamed.');
     }
 
@@ -30,7 +30,7 @@ export class UnitService {
 
     return prisma.unit.update({
       where: { id },
-      data: { name }
+      data: { name, requiredFields }
     });
   }
 
