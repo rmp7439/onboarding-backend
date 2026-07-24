@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 export const validateRegistration = (req: Request, res: Response, next: NextFunction): void => {
   const requiredFields = [
     'unit', 
-    'firstName', 'surname', 'fatherName', 'gender', 'bloodGroup', 
+    'firstName', 'surname', 'fatherName', 'gender', 'bloodGroup', 'education',
     'dateOfBirth', 'joiningDate', 'mobile', 'aadhaar', 
     'permanentAddress', 'currentAddress', 'city', 'state', 'pinCode', 
     'bankName', 'accountNumber', 'ifsc', 'branch', 'micr', 

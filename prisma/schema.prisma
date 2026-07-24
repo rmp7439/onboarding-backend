@@ -50,6 +50,7 @@ model Employee {
   husbandName       String?
   gender            Gender
   bloodGroup        BloodGroup
+  education         HighestEducation @default(OTHER)
   dateOfBirth       DateTime
   joiningDate       DateTime
   mobile            String         @unique
@@ -146,4 +147,17 @@ enum BloodGroup {
   AB_NEGATIVE
   O_POSITIVE
   O_NEGATIVE
+}
+
+enum HighestEducation {
+  ILLITERATE
+  PRIMARY
+  SECONDARY
+  HIGHER_SECONDARY
+  ITI
+  DIPLOMA
+  GRADUATE
+  POST_GRADUATE
+  DOCTORATE
+  OTHER
 }

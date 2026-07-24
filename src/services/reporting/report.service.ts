@@ -140,6 +140,7 @@ function renderEmployeeProfileLayout(
     "Husband Name": employee.husbandName,
     Gender: employee.gender,
     "Blood Group": employee.bloodGroup,
+    "Education": employee.education,
     "Date of Birth": employee.dateOfBirth.toISOString().split("T")[0],
     "Phone Number": employee.mobile,
   });
@@ -272,6 +273,7 @@ export class ReportService {
       { header: "DOB", key: "dob", width: 15 },
       { header: "DOJ", key: "doj", width: 15 },
       { header: "GENDER", key: "gender", width: 10 },
+      { header: "EDUCATION", key: "education", width: 20 },
       { header: "MOBILE", key: "mobile", width: 15 },
       { header: "JOB TYPE", key: "jobType", width: 15 },
       { header: "BANK CODE", key: "bankCode", width: 15 },
@@ -339,6 +341,7 @@ export class ReportService {
         dob: emp.dateOfBirth ? emp.dateOfBirth.toISOString().split("T")[0] : "",
         doj: emp.joiningDate ? emp.joiningDate.toISOString().split("T")[0] : "",
         gender: emp.gender || "",
+        education: emp.education || "",
         mobile: emp.mobile || "",
         jobType: "",
         bankCode: "",
