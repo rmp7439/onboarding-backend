@@ -11,6 +11,11 @@ export class AuthService {
       throw new Error("Invalid credentials");
     }
 
+    // Properly typed! No more 'any'
+    if (!admin.active) {
+      throw new Error("Account has been disabled. Please contact the system owner.");
+    }
+
     const isValidPassword = await bcrypt.compare(password, admin.password);
     if (!isValidPassword) {
       throw new Error("Invalid credentials");
