@@ -78,6 +78,10 @@ model Employee {
   emergencyName     String
   emergencyRelation String
   emergencyPhone    String
+  nomineeName       String?
+  nomineeRelation   String?
+  nomineeMobile     String?
+  nomineePercentage Int?
   selfieFilename    String?
   selfieMimeType    String?
   selfieSize        Int?

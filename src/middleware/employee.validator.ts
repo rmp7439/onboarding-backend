@@ -6,8 +6,10 @@ export const validateRegistration = (req: Request, res: Response, next: NextFunc
     'firstName', 'surname', 'fatherName', 'gender', 'bloodGroup', 'education', 'maritalStatus',
     'dateOfBirth', 'joiningDate', 'mobile', 'aadhaar', 
     'permanentAddress', 'currentAddress', 'city', 'state', 'pinCode', 
+    'permanentPoliceStation', 'currentCity', 'currentState', 'currentPinCode',
     'accountHolderName', 'bankName', 'accountNumber', 'ifsc', 
-    'emergencyName', 'emergencyRelation', 'emergencyPhone'
+    'emergencyName', 'emergencyRelation', 'emergencyPhone',
+    'nomineeName', 'nomineeRelation', 'nomineeMobile', 'nomineePercentage' 
   ];
 
   const missingFields = requiredFields.filter(field => !req.body[field]);
@@ -80,8 +82,10 @@ export const validateEmployeeUpdate = (req: Request, res: Response, next: NextFu
     'firstName', 'surname', 'fatherName', 'gender', 'bloodGroup', 'education', 'maritalStatus',
     'dateOfBirth', 'joiningDate', 'mobile', 'aadhaar', 
     'permanentAddress', 'currentAddress', 'city', 'state', 'pinCode', 
+    'permanentPoliceStation', 'currentCity', 'currentState', 'currentPinCode', // <-- Added Expanded Address (Req 6)
     'accountHolderName', 'bankName', 'accountNumber', 'ifsc',
-    'emergencyName', 'emergencyRelation', 'emergencyPhone'
+    'emergencyName', 'emergencyRelation', 'emergencyPhone',
+    'nomineeName', 'nomineeRelation', 'nomineeMobile', 'nomineePercentage' // <-- Added Nominee Details (Req 8)
   ];
 
   const missingFields = requiredFields.filter(field => !req.body[field]);
