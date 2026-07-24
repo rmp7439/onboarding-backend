@@ -32,6 +32,14 @@ export class EmployeeService {
       data.unit = devUnit.name;
     }
 
+    if (data.bankName) {
+      const bank = await prisma.bank.findFirst({
+        where: { name: { equals: data.bankName, mode: 'insensitive' }, isActive: true }
+      });
+      if (!bank) throw new Error('Selected bank is not recognized or is currently inactive.');
+      data.bankName = bank.name; // Normalize to exact master casing
+    }
+
     const dateOfBirth = new Date(data.dateOfBirth);
     const joiningDate = new Date(data.joiningDate);
 
@@ -108,6 +116,14 @@ export class EmployeeService {
     const updateData: any = { ...data };
     if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth as string | Date);
     if (data.joiningDate) updateData.joiningDate = new Date(data.joiningDate as string | Date);
+
+    if (data.bankName && data.bankName !== employee.bankName) {
+      const bank = await prisma.bank.findFirst({
+        where: { name: { equals: data.bankName as string, mode: 'insensitive' }, isActive: true }
+      });
+      if (!bank) throw new Error('Selected bank is not recognized or is currently inactive.');
+      data.bankName = bank.name; // Normalize to exact master casing
+    }
 
     updateData.status = EmployeeStatus.PENDING;
     updateData.correctionRemark = null;
