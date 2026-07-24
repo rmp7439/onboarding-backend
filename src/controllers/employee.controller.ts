@@ -217,3 +217,24 @@ export const updateCode: RequestHandler = async (req, res): Promise<void> => {
     res.status(statusCode).json({ success: false, error: error.message });
   }
 };
+
+export const adminUpdateEmployee: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const employee = await EmployeeService.adminUpdateEmployee(
+      String(req.params.id),
+      req.body
+    );
+
+    res.status(200).json({
+      success: true,
+      data: employee,
+    });
+  } catch (error: any) {
+    const statusCode = error.message.includes("already")
+      ? 409
+      : error.message.includes("not found")
+        ? 404
+        : 400;
+    res.status(statusCode).json({ success: false, error: error.message });
+  }
+};

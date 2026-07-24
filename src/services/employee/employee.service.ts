@@ -1,34 +1,52 @@
-import { prisma } from '../../config/prisma';
-import { Employee, EmployeeStatus, Prisma } from '@prisma/client';
+import { prisma } from "../../config/prisma";
+import { Employee, EmployeeStatus, Prisma } from "@prisma/client";
 
 type EmployeeWithRejectReason = Employee & {
   rejectReason?: string | null;
 };
 
 export class EmployeeService {
-  static async registerEmployee(data: Prisma.EmployeeCreateInput): Promise<Employee> {
-    const orConditions: any[] = [{ mobile: data.mobile }, { aadhaar: data.aadhaar }];
-    
+  static async registerEmployee(
+    data: Prisma.EmployeeCreateInput,
+  ): Promise<Employee> {
+    const orConditions: any[] = [
+      { mobile: data.mobile },
+      { aadhaar: data.aadhaar },
+    ];
+
     if (data.pan) {
-      orConditions.push({ pan : data.pan });
+      orConditions.push({ pan: data.pan });
     }
 
     const existingEmployee = await prisma.employee.findFirst({
       where: {
-        OR: orConditions
-      }
+        OR: orConditions,
+      },
     });
 
     if (existingEmployee) {
-      if (existingEmployee.mobile === data.mobile) throw new Error('Mobile number already registered.');
-      if (existingEmployee.aadhaar === data.aadhaar) throw new Error('Aadhaar already registered.');
-      if (data.pan && existingEmployee.pan === data.pan) throw new Error('PAN already registered.');
+      if (existingEmployee.mobile === data.mobile)
+        throw new Error("Mobile number already registered.");
+      if (existingEmployee.aadhaar === data.aadhaar)
+        throw new Error("Aadhaar already registered.");
+      if (data.pan && existingEmployee.pan === data.pan)
+        throw new Error("PAN already registered.");
     }
 
     // Ensure unit defaults to Development if missing or unintended placeholder
-    if (!data.unit || data.unit === "" || data.unit === "N/A" || data.unit === "Developer" || data.unit === "Demo Unit A" || data.unit === "Demo Unit B") {
-      const devUnit = await prisma.unit.findUnique({ where: { name: 'Development' } });
-      if (!devUnit) throw new Error("Development Unit not found in the database.");
+    if (
+      !data.unit ||
+      data.unit === "" ||
+      data.unit === "N/A" ||
+      data.unit === "Developer" ||
+      data.unit === "Demo Unit A" ||
+      data.unit === "Demo Unit B"
+    ) {
+      const devUnit = await prisma.unit.findUnique({
+        where: { name: "Development" },
+      });
+      if (!devUnit)
+        throw new Error("Development Unit not found in the database.");
       data.unit = devUnit.name;
     }
 
@@ -42,23 +60,23 @@ export class EmployeeService {
         joiningDate,
         status: EmployeeStatus.PENDING,
         employeeCode: null,
-      }
+      },
     });
   }
 
   static async getMyUnitEmployees(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { units: { include: { unit: true } } }
+      include: { units: { include: { unit: true } } },
     });
-    
+
     if (!user || user.units.length === 0) return [];
-    
-    const unitNames = user.units.map(u => u.unit.name);
-    
+
+    const unitNames = user.units.map((u) => u.unit.name);
+
     return prisma.employee.findMany({
       where: { unit: { in: unitNames } },
-      orderBy: { uploadedAt: 'desc' },
+      orderBy: { uploadedAt: "desc" },
       select: {
         id: true,
         firstName: true,
@@ -67,8 +85,8 @@ export class EmployeeService {
         mobile: true,
         status: true,
         uploadedAt: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
   }
 
@@ -77,45 +95,61 @@ export class EmployeeService {
     return employee;
   }
 
-  static async returnForCorrection(id: string, remark: string): Promise<Employee> {
+  static async returnForCorrection(
+    id: string,
+    remark: string,
+  ): Promise<Employee> {
     await this.getEmployeeById(id);
     return prisma.employee.update({
       where: { id },
       data: {
         status: EmployeeStatus.RETURNED_FOR_CORRECTION,
-        correctionRemark: remark
-      }
+        correctionRemark: remark,
+      },
     });
   }
 
-  static async updateEmployee(id: string, data: Prisma.EmployeeUpdateInput): Promise<Employee> {
+  static async updateEmployee(
+    id: string,
+    data: Prisma.EmployeeUpdateInput,
+  ): Promise<Employee> {
     const employee = await this.getEmployeeById(id);
 
     const orConditions = [];
-    if (data.mobile && data.mobile !== employee.mobile) orConditions.push({ mobile: data.mobile as string });
-    if (data.aadhaar && data.aadhaar !== employee.aadhaar) orConditions.push({ aadhaar: data.aadhaar as string });
-    if (data.pan && data.pan !== employee.pan) orConditions.push({ pan: data.pan as string });
+    if (data.mobile && data.mobile !== employee.mobile)
+      orConditions.push({ mobile: data.mobile as string });
+    if (data.aadhaar && data.aadhaar !== employee.aadhaar)
+      orConditions.push({ aadhaar: data.aadhaar as string });
+    if (data.pan && data.pan !== employee.pan)
+      orConditions.push({ pan: data.pan as string });
 
     if (orConditions.length > 0) {
-      const existing = await prisma.employee.findFirst({ where: { OR: orConditions } });
+      const existing = await prisma.employee.findFirst({
+        where: { OR: orConditions },
+      });
       if (existing) {
-        if (existing.mobile === data.mobile) throw new Error('Mobile number already registered.');
-        if (existing.aadhaar === data.aadhaar) throw new Error('Aadhaar already registered.');
-        if (existing.pan === data.pan) throw new Error('PAN already registered.');
+        if (existing.mobile === data.mobile)
+          throw new Error("Mobile number already registered.");
+        if (existing.aadhaar === data.aadhaar)
+          throw new Error("Aadhaar already registered.");
+        if (existing.pan === data.pan)
+          throw new Error("PAN already registered.");
       }
     }
 
     const updateData: any = { ...data };
-    if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth as string | Date);
-    if (data.joiningDate) updateData.joiningDate = new Date(data.joiningDate as string | Date);
+    if (data.dateOfBirth)
+      updateData.dateOfBirth = new Date(data.dateOfBirth as string | Date);
+    if (data.joiningDate)
+      updateData.joiningDate = new Date(data.joiningDate as string | Date);
 
     updateData.status = EmployeeStatus.PENDING;
     updateData.correctionRemark = null;
-    updateData.rejectReason = null; 
+    updateData.rejectReason = null;
 
     return prisma.employee.update({
       where: { id },
-      data: updateData
+      data: updateData,
     });
   }
 
@@ -123,18 +157,18 @@ export class EmployeeService {
     const employees = await prisma.employee.findMany({
       where: {
         OR: [
-          { firstName: { contains: query, mode: 'insensitive' } },
-          { surname: { contains: query, mode: 'insensitive' } },
-          { employeeCode: { contains: query, mode: 'insensitive' } },
+          { firstName: { contains: query, mode: "insensitive" } },
+          { surname: { contains: query, mode: "insensitive" } },
+          { employeeCode: { contains: query, mode: "insensitive" } },
           { mobile: { contains: query } },
-          { aadhaar: { contains: query } } 
-        ]
+          { aadhaar: { contains: query } },
+        ],
       },
-      take: 20, 
-      orderBy: { uploadedAt: 'desc' }
+      take: 20,
+      orderBy: { uploadedAt: "desc" },
     });
 
-    return employees.map(emp => ({
+    return employees.map((emp) => ({
       id: emp.id,
       firstName: emp.firstName,
       surname: emp.surname,
@@ -147,7 +181,9 @@ export class EmployeeService {
 
   static async getAllEmployees(searchQuery?: string): Promise<Employee[]> {
     // Automatically assign missing or test units to 'Development'
-    const devUnit = await prisma.unit.findUnique({ where: { name: 'Development' } });
+    const devUnit = await prisma.unit.findUnique({
+      where: { name: "Development" },
+    });
     if (!devUnit) {
       throw new Error("Development Unit not found in the database.");
     }
@@ -160,49 +196,116 @@ export class EmployeeService {
           { unit: "N/A" },
           { unit: "Developer" },
           { unit: "Demo Unit A" },
-          { unit: "Demo Unit B" }
-        ]
+          { unit: "Demo Unit B" },
+        ],
       },
       data: {
-        unit: devUnit.name
-      }
+        unit: devUnit.name,
+      },
     });
 
     const where: Prisma.EmployeeWhereInput = {};
-    
+
     if (searchQuery) {
       where.OR = [
-        { firstName: { contains: searchQuery, mode: 'insensitive' } },
-        { surname: { contains: searchQuery, mode: 'insensitive' } },
-        { employeeCode: { contains: searchQuery, mode: 'insensitive' } },
-        { mobile: { contains: searchQuery } } 
+        { firstName: { contains: searchQuery, mode: "insensitive" } },
+        { surname: { contains: searchQuery, mode: "insensitive" } },
+        { employeeCode: { contains: searchQuery, mode: "insensitive" } },
+        { mobile: { contains: searchQuery } },
       ];
     }
 
-    return prisma.employee.findMany({ 
-      where, 
-      orderBy: { uploadedAt: 'desc' } 
+    return prisma.employee.findMany({
+      where,
+      orderBy: { uploadedAt: "desc" },
     });
   }
 
   static async getEmployeeById(id: string): Promise<Employee> {
     const employee = await prisma.employee.findUnique({
       where: { id },
-      include: { documents: true }
+      include: { documents: true },
     });
-    if (!employee) throw new Error('Employee not found.');
+    if (!employee) throw new Error("Employee not found.");
     return employee;
   }
 
-  static async updateEmployeeStatus(id: string, status: EmployeeStatus, rejectReason: string | null = null): Promise<Employee> {
+  static async updateEmployeeStatus(
+    id: string,
+    status: EmployeeStatus,
+    rejectReason: string | null = null,
+  ): Promise<Employee> {
     await this.getEmployeeById(id);
-    return prisma.employee.update({ where: { id }, data: { status, rejectReason } });
+    return prisma.employee.update({
+      where: { id },
+      data: { status, rejectReason },
+    });
   }
 
-  static async updateEmployeeCode(id: string, employeeCode: string): Promise<Employee> {
+  static async updateEmployeeCode(
+    id: string,
+    employeeCode: string,
+  ): Promise<Employee> {
     await this.getEmployeeById(id);
-    const codeExists = await prisma.employee.findUnique({ where: { employeeCode } });
-    if (codeExists && codeExists.id !== id) throw new Error('Employee code is already in use by another employee.');
+    const codeExists = await prisma.employee.findUnique({
+      where: { employeeCode },
+    });
+    if (codeExists && codeExists.id !== id)
+      throw new Error("Employee code is already in use by another employee.");
     return prisma.employee.update({ where: { id }, data: { employeeCode } });
+  }
+
+  // Add this method to the EmployeeService class
+  static async adminUpdateEmployee(
+    id: string,
+    data: Prisma.EmployeeUpdateInput,
+  ): Promise<Employee> {
+    const employee = await this.getEmployeeById(id);
+
+    // 1. Uniqueness Checks
+    const orConditions = [];
+    if (data.mobile && data.mobile !== employee.mobile)
+      orConditions.push({ mobile: data.mobile as string });
+    if (data.aadhaar && data.aadhaar !== employee.aadhaar)
+      orConditions.push({ aadhaar: data.aadhaar as string });
+    if (data.pan && data.pan !== employee.pan)
+      orConditions.push({ pan: data.pan as string });
+
+    if (orConditions.length > 0) {
+      const existing = await prisma.employee.findFirst({
+        where: { OR: orConditions },
+      });
+      if (existing) {
+        if (existing.mobile === data.mobile)
+          throw new Error("Mobile number already registered.");
+        if (existing.aadhaar === data.aadhaar)
+          throw new Error("Aadhaar already registered.");
+        if (existing.pan === data.pan)
+          throw new Error("PAN already registered.");
+      }
+    }
+
+    // 2. Data formatting
+    const updateData: any = { ...data };
+    if (data.dateOfBirth)
+      updateData.dateOfBirth = new Date(data.dateOfBirth as string | Date);
+    if (data.joiningDate)
+      updateData.joiningDate = new Date(data.joiningDate as string | Date);
+
+    // NOTE: We intentionally DO NOT force status to PENDING or clear rejection remarks here.
+    // Admins should be able to silently correct typos without altering the workflow state.
+
+    // 3. Database Update
+    const updatedEmployee = await prisma.employee.update({
+      where: { id },
+      data: updateData,
+    });
+
+    // ==========================================
+    // [PHASE 4 PREP]: AUDIT LOG HOOK GOES HERE
+    // ActivityLogService.logChange(employee, updatedEmployee, adminId);
+    // ==========================================
+
+    return updatedEmployee;
   }
 }
