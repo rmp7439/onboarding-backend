@@ -54,7 +54,7 @@ model Employee {
   joiningDate       DateTime
   mobile            String         @unique
   aadhaar           String         @unique
-  pan               String         @unique
+  pan               String?        @unique
   uan               String?
   esic              String?
   permanentAddress  String

@@ -7,16 +7,22 @@ type EmployeeWithRejectReason = Employee & {
 
 export class EmployeeService {
   static async registerEmployee(data: Prisma.EmployeeCreateInput): Promise<Employee> {
+    const orConditions: any[] = [{ mobile: data.mobile }, { aadhaar: data.aadhaar }];
+    
+    if (data.pan) {
+      orConditions.push({ pan : data.pan });
+    }
+
     const existingEmployee = await prisma.employee.findFirst({
       where: {
-        OR: [{ mobile: data.mobile }, { aadhaar: data.aadhaar }, { pan: data.pan }]
+        OR: orConditions
       }
     });
 
     if (existingEmployee) {
       if (existingEmployee.mobile === data.mobile) throw new Error('Mobile number already registered.');
       if (existingEmployee.aadhaar === data.aadhaar) throw new Error('Aadhaar already registered.');
-      if (existingEmployee.pan === data.pan) throw new Error('PAN already registered.');
+      if (data.pan && existingEmployee.pan === data.pan) throw new Error('PAN already registered.');
     }
 
     // Ensure unit defaults to Development if missing or unintended placeholder
@@ -40,7 +46,6 @@ export class EmployeeService {
     });
   }
 
-  // --- RESTORED METHOD TO FIX TS2339 COMPILER ERROR ---
   static async getMyUnitEmployees(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
