@@ -3,17 +3,18 @@ import { prisma } from '../config/prisma';
 
 export const validateRegistration = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    // These base fields remain universally required for all employees
+    // These base fields remain universally required for all employees across all units
     const baseRequiredFields = [
       'unit', 
-      'firstName', 'surname', 'fatherName',
+      'firstName', 'surname', 'fatherName', 
+      'bloodGroup', // <-- Restored missing mandatory enum field
       'dateOfBirth', 'joiningDate', 'mobile', 
       'permanentAddress', 'currentAddress', 'city', 'state', 'pinCode', 
       'permanentPoliceStation', 'currentCity', 'currentState', 'currentPinCode', 
       'emergencyName', 'emergencyRelation', 'emergencyPhone'
     ];
 
-    const missingBaseFields = baseRequiredFields.filter(field => !req.body[field]);
+    const missingBaseFields = baseRequiredFields.filter(field => !req.body[field] || String(req.body[field]).trim() === '');
 
     if (missingBaseFields.length > 0) {
       res.status(400).json({
@@ -27,7 +28,7 @@ export const validateRegistration = async (req: Request, res: Response, next: Ne
     if (req.body.unit) {
       const unitRecord = await prisma.unit.findUnique({ where: { name: req.body.unit } });
       if (unitRecord && unitRecord.requiredFields && unitRecord.requiredFields.length > 0) {
-        const missingDynamicFields = unitRecord.requiredFields.filter((field: string) => !req.body[field]);
+        const missingDynamicFields = unitRecord.requiredFields.filter((field: string) => !req.body[field] || String(req.body[field]).trim() === '');
         
         if (missingDynamicFields.length > 0) {
           res.status(400).json({
@@ -38,6 +39,14 @@ export const validateRegistration = async (req: Request, res: Response, next: Ne
         }
       }
     }
+
+    // Sanitize empty strings for optional Enum fields to prevent Prisma validation crashes
+    const enumFields = ['education', 'maritalStatus', 'gender', 'bloodGroup'];
+    enumFields.forEach(field => {
+      if (req.body[field] === "") {
+        delete req.body[field];
+      }
+    });
 
     next();
   } catch (error) {
@@ -101,13 +110,14 @@ export const validateEmployeeUpdate = async (req: Request, res: Response, next: 
     const baseRequiredFields = [
       'unit', 
       'firstName', 'surname', 'fatherName', 
+      'bloodGroup',
       'dateOfBirth', 'joiningDate', 'mobile', 
       'permanentAddress', 'currentAddress', 'city', 'state', 'pinCode', 
       'permanentPoliceStation', 'currentCity', 'currentState', 'currentPinCode', 
       'emergencyName', 'emergencyRelation', 'emergencyPhone'
     ];
 
-    const missingBaseFields = baseRequiredFields.filter(field => !req.body[field]);
+    const missingBaseFields = baseRequiredFields.filter(field => !req.body[field] || String(req.body[field]).trim() === '');
 
     if (missingBaseFields.length > 0) {
       res.status(400).json({
@@ -120,7 +130,7 @@ export const validateEmployeeUpdate = async (req: Request, res: Response, next: 
     if (req.body.unit) {
       const unitRecord = await prisma.unit.findUnique({ where: { name: req.body.unit } });
       if (unitRecord && unitRecord.requiredFields && unitRecord.requiredFields.length > 0) {
-        const missingDynamicFields = unitRecord.requiredFields.filter((field: string) => !req.body[field]);
+        const missingDynamicFields = unitRecord.requiredFields.filter((field: string) => !req.body[field] || String(req.body[field]).trim() === '');
         
         if (missingDynamicFields.length > 0) {
           res.status(400).json({
@@ -131,6 +141,13 @@ export const validateEmployeeUpdate = async (req: Request, res: Response, next: 
         }
       }
     }
+
+    const enumFields = ['education', 'maritalStatus', 'gender', 'bloodGroup'];
+    enumFields.forEach(field => {
+      if (req.body[field] === "") {
+        delete req.body[field];
+      }
+    });
 
     next();
   } catch (error) {
