@@ -33,10 +33,10 @@ export class UserService {
 
     return {
       id: user.id,
-      userId: user.userId, // Added
+      userId: user.userId,
       name: user.name,
       mobile: user.mobile,
-      role: "USER",
+      role: "SUPERVISOR", // Swapped "USER" for "SUPERVISOR"
       units: user.units.map((u) => ({ id: u.unit.id, name: u.unit.name })),
     };
   }
@@ -100,9 +100,9 @@ export class UserService {
     }
 
     const updateData = { ...data };
-    
+
     // Security: Prevent overriding the isProtected flag via the UI/API
-    if ('isProtected' in updateData) {
+    if ("isProtected" in updateData) {
       delete updateData.isProtected;
     }
 
@@ -128,7 +128,9 @@ export class UserService {
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) throw new Error("User not found.");
     if (user.isProtected) {
-      throw new Error("This is a protected support account and cannot be deleted.");
+      throw new Error(
+        "This is a protected support account and cannot be deleted.",
+      );
     }
 
     return prisma.user.delete({
@@ -164,7 +166,9 @@ export class UserService {
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) throw new Error("User not found.");
     if (user.isProtected) {
-      throw new Error("The password for this protected support account cannot be reset from the admin portal.");
+      throw new Error(
+        "The password for this protected support account cannot be reset from the admin portal.",
+      );
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);

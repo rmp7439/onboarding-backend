@@ -5,13 +5,13 @@ import {
   updateUnit, 
   deleteUnit 
 } from '../controllers/unit.controller';
-import { authenticateAdmin } from '../middleware/auth.middleware';
+import { authenticateToken, RequireRole, ROLES } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.get('/units', authenticateAdmin as RequestHandler, getUnits as RequestHandler);
-router.post('/units', authenticateAdmin as RequestHandler, createUnit as RequestHandler);
-router.put('/units/:id', authenticateAdmin as RequestHandler, updateUnit as RequestHandler);
-router.delete('/units/:id', authenticateAdmin as RequestHandler, deleteUnit as RequestHandler);
+router.get('/units', authenticateToken as RequestHandler, RequireRole(ROLES.DEV, ROLES.ADMIN) as RequestHandler, getUnits as RequestHandler);
+router.post('/units', authenticateToken as RequestHandler, RequireRole(ROLES.DEV) as RequestHandler, createUnit as RequestHandler);
+router.put('/units/:id', authenticateToken as RequestHandler, RequireRole(ROLES.DEV) as RequestHandler, updateUnit as RequestHandler);
+router.delete('/units/:id', authenticateToken as RequestHandler, RequireRole(ROLES.DEV) as RequestHandler, deleteUnit as RequestHandler);
 
-export default router;
+export default router
