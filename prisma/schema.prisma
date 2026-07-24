@@ -69,11 +69,12 @@ model Employee {
   currentCity            String?
   currentState           String?
   currentPinCode         String?
+  accountHolderName String?
   bankName          String
   accountNumber     String
   ifsc              String
-  branch            String
-  micr              String
+  branch            String?
+  micr              String?
   emergencyName     String
   emergencyRelation String
   emergencyPhone    String

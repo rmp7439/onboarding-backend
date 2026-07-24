@@ -167,10 +167,10 @@ function renderEmployeeProfileLayout(
   });
 
   addSection("Bank Details", {
+    "Account Holder Name": employee.accountHolderName, 
     "Bank Name": employee.bankName,
     "Account Number": employee.accountNumber,
     "IFSC Code": employee.ifsc,
-    Branch: employee.branch,
     "MICR Code": employee.micr,
   });
 
@@ -354,7 +354,7 @@ export class ReportService {
         bankCode: "",
         payMode: "",
         accountNo: emp.accountNumber || "",
-        accHolderName: emp.bankName || "",
+        accHolderName: emp.accountHolderName || "",
         ifscCode: emp.ifsc || "",
         weeklyOff: "",
         aadhaarNo: emp.aadhaar || "",
