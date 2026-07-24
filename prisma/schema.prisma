@@ -65,6 +65,10 @@ model Employee {
   city              String
   state             String
   pinCode           String
+  permanentPoliceStation String?
+  currentCity            String?
+  currentState           String?
+  currentPinCode         String?
   bankName          String
   accountNumber     String
   ifsc              String

@@ -156,10 +156,14 @@ function renderEmployeeProfileLayout(
 
   addSection("Address Details", {
     "Permanent Address": employee.permanentAddress,
+    "Permanent City": employee.city,
+    "Permanent State": employee.state,
+    "Permanent PIN Code": employee.pinCode,
+    "Police Station": employee.permanentPoliceStation,
     "Current Address": employee.currentAddress,
-    City: employee.city,
-    State: employee.state,
-    "PIN Code": employee.pinCode,
+    "Current City": employee.currentCity,
+    "Current State": employee.currentState,
+    "Current PIN Code": employee.currentPinCode,
   });
 
   addSection("Bank Details", {
@@ -370,8 +374,8 @@ export class ReportService {
         designationCode: "",
         empCatCode: "",
         localAdd1: emp.currentAddress || "",
-        localAdd2: emp.city ? `${emp.city}, ${emp.state}` : "",
-        localPincode: emp.pinCode || "",
+        localAdd2: emp.currentCity ? `${emp.currentCity}, ${emp.currentState}` : "",
+        localPincode: emp.currentPinCode || "",
         permanentAdd1: emp.permanentAddress || "",
         permanentAdd2: emp.city ? `${emp.city}, ${emp.state}` : "",
         permanentPincode: emp.pinCode || "",
