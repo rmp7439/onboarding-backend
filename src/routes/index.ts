@@ -6,7 +6,6 @@ import dashboardRouter from './dashboard.route';
 import authRouter from './auth.route';
 import reportRouter from './report.route';
 import downloadRouter from './download.route';
-import bankRouter from './bank.route';
 
 // 1. Import the new modules
 import userRouter from './user.route';
@@ -25,6 +24,5 @@ router.use(downloadRouter);
 // 2. Register the new modules mirroring the existing pattern
 router.use(userRouter);
 router.use(unitRouter);
-router.use(bankRouter);
 
 export default router;
