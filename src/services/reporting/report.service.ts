@@ -141,7 +141,7 @@ function renderEmployeeProfileLayout(
     Gender: employee.gender,
     "Blood Group": employee.bloodGroup,
     "Marital Status": employee.maritalStatus,
-    "Education": employee.education,
+    Education: employee.education,
     "Date of Birth": employee.dateOfBirth.toISOString().split("T")[0],
     "Phone Number": employee.mobile,
   });
@@ -151,7 +151,7 @@ function renderEmployeeProfileLayout(
     PAN: employee.pan,
     UAN: employee.uan,
     ESIC: employee.esic,
-    "Driving License": employee.drivingLicense
+    "Driving Licence": employee.drivingLicence,
   });
 
   addSection("Address Details", {
@@ -167,7 +167,7 @@ function renderEmployeeProfileLayout(
   });
 
   addSection("Bank Details", {
-    "Account Holder Name": employee.accountHolderName, 
+    "Account Holder Name": employee.accountHolderName,
     "Bank Name": employee.bankName,
     "Account Number": employee.accountNumber,
     "IFSC Code": employee.ifsc,
@@ -178,6 +178,13 @@ function renderEmployeeProfileLayout(
     Name: employee.emergencyName,
     Relationship: employee.emergencyRelation,
     Phone: employee.emergencyPhone,
+  });
+
+  addSection("Nominee Details", {
+    "Nominee Name": employee.nomineeName,
+    Relationship: employee.nomineeRelation,
+    "Mobile Number": employee.nomineeMobile,
+    Percentage: employee.nomineePercentage ? `${employee.nomineePercentage}%` : "N/A",
   });
 
   // Documents Section
@@ -257,7 +264,6 @@ export class ReportService {
     ],
   ): Promise<Buffer> {
     const where = await buildReportFilter(filters);
-    // INCLUDE documents in the query
     const employees = await prisma.employee.findMany({
       where,
       orderBy: { uploadedAt: "desc" },
@@ -278,21 +284,22 @@ export class ReportService {
       { header: "DOB", key: "dob", width: 15 },
       { header: "DOJ", key: "doj", width: 15 },
       { header: "GENDER", key: "gender", width: 10 },
+      { header: "HIGHEST EDUCATION", key: "education", width: 20 },
       { header: "MARITAL STATUS", key: "maritalStatus", width: 15 },
-      { header: "EDUCATION", key: "education", width: 20 },
       { header: "MOBILE", key: "mobile", width: 15 },
       { header: "JOB TYPE", key: "jobType", width: 15 },
-      { header: "BANK CODE", key: "bankCode", width: 15 },
+      { header: "A/C HOLDER NAME", key: "accountHolderName", width: 30 },
+      { header: "BANK NAME", key: "bankName", width: 30 },
       { header: "PAY MODE", key: "payMode", width: 15 },
       { header: "ACCOUNT NO", key: "accountNo", width: 20 },
-      { header: "ACC HOLDER NAME", key: "accHolderName", width: 30 },
       { header: "IFSC CODE", key: "ifscCode", width: 15 },
+      { header: "MICR CODE", key: "micrCode", width: 15 },
       { header: "WEEKLY OFF", key: "weeklyOff", width: 15 },
       { header: "AADHAAR NO", key: "aadhaarNo", width: 20 },
       { header: "PF NUMBER", key: "pfNumber", width: 20 },
       { header: "ESI NO", key: "esiNo", width: 20 },
-      { header: "DRIVING LICENCE", key: "drivingLicence", width: 20 },
       { header: "PAN NO", key: "panNo", width: 15 },
+      { header: "DRIVING LICENCE", key: "drivingLicence", width: 20 },
       { header: "AADHAAR STATE CODE", key: "aadhaarStateCode", width: 15 },
       { header: "UAN NO", key: "uanNo", width: 20 },
       { header: "PF DED", key: "pfDed", width: 10 },
@@ -310,6 +317,11 @@ export class ReportService {
       { header: "PermanentAdd1", key: "permanentAdd1", width: 25 },
       { header: "PermanentAdd2", key: "permanentAdd2", width: 25 },
       { header: "PermanentPincode", key: "permanentPincode", width: 15 },
+      { header: "PoliceStation", key: "policeStation", width: 20 },
+      { header: "NOMINEE NAME", key: "nomineeName", width: 25 },
+      { header: "NOMINEE RELATION", key: "nomineeRelation", width: 20 },
+      { header: "NOMINEE MOBILE", key: "nomineeMobile", width: 15 },
+      { header: "NOMINEE PERCENTAGE", key: "nomineePercentage", width: 10 },
       { header: "CompID", key: "compId", width: 15 },
       { header: "Error", key: "error", width: 10 },
     ];
@@ -347,21 +359,22 @@ export class ReportService {
         dob: emp.dateOfBirth ? emp.dateOfBirth.toISOString().split("T")[0] : "",
         doj: emp.joiningDate ? emp.joiningDate.toISOString().split("T")[0] : "",
         gender: emp.gender || "",
-        maritalStatus: emp.maritalStatus || "",
         education: emp.education || "",
+        maritalStatus: emp.maritalStatus || "",
         mobile: emp.mobile || "",
         jobType: "",
-        bankCode: "",
+        accountHolderName: emp.accountHolderName || "",
+        bankName: emp.bankName || "",
         payMode: "",
         accountNo: emp.accountNumber || "",
-        accHolderName: emp.accountHolderName || "",
         ifscCode: emp.ifsc || "",
+        micrCode: emp.micr || "",
         weeklyOff: "",
         aadhaarNo: emp.aadhaar || "",
         pfNumber: "",
         esiNo: emp.esic || "",
-        drivingLicence: emp.drivingLicence || "",
         panNo: emp.pan || "",
+        drivingLicence: emp.drivingLicence || "",
         aadhaarStateCode: "",
         uanNo: emp.uan || "",
         pfDed: "",
@@ -379,6 +392,11 @@ export class ReportService {
         permanentAdd1: emp.permanentAddress || "",
         permanentAdd2: emp.city ? `${emp.city}, ${emp.state}` : "",
         permanentPincode: emp.pinCode || "",
+        policeStation: emp.permanentPoliceStation || "",
+        nomineeName: emp.nomineeName || "",
+        nomineeRelation: emp.nomineeRelation || "",
+        nomineeMobile: emp.nomineeMobile || "",
+        nomineePercentage: emp.nomineePercentage || "",
         compId: "",
         error: "",
         additionalCol1: "Processed",
