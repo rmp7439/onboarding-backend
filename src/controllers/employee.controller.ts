@@ -227,8 +227,8 @@ export const adminUpdateEmployee: RequestHandler = async (
     const admin = (req as any).admin;
     const actorContext = {
       id: admin.id,
-      name: admin.name || admin.email,
-      email: admin.email,
+      name: admin.name,
+      username: admin.username,
       role: admin.role,
       ip: req.ip,
       userAgent: req.get("User-Agent"),
