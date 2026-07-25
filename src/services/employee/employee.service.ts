@@ -266,9 +266,36 @@ export class EmployeeService {
   ): Promise<Employee> {
     const employee = await this.getEmployeeById(id);
 
-    // ... (keep existing uniqueness checks and data formatting) ...
+    const orConditions = [];
+    if (data.mobile && data.mobile !== employee.mobile)
+      orConditions.push({ mobile: data.mobile as string });
+    if (data.aadhaar && data.aadhaar !== employee.aadhaar)
+      orConditions.push({ aadhaar: data.aadhaar as string });
+    if (data.pan && data.pan !== employee.pan)
+      orConditions.push({ pan: data.pan as string });
+
+    if (orConditions.length > 0) {
+      const existing = await prisma.employee.findFirst({
+        where: { OR: orConditions },
+      });
+
+      if (existing) {
+        if (existing.mobile === data.mobile)
+          throw new Error("Mobile number already registered.");
+        if (existing.aadhaar === data.aadhaar)
+          throw new Error("Aadhaar already registered.");
+        if (existing.pan === data.pan)
+          throw new Error("PAN already registered.");
+      }
+    }
+
     const updateData: any = { ...data };
-    // ... (keep date parsing) ...
+
+    if (data.dateOfBirth)
+      updateData.dateOfBirth = new Date(data.dateOfBirth as string | Date);
+
+    if (data.joiningDate)
+      updateData.joiningDate = new Date(data.joiningDate as string | Date);
 
     const updatedEmployee = await prisma.employee.update({
       where: { id },
