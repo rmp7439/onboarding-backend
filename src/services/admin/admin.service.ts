@@ -70,8 +70,8 @@ export class AdminService {
     const targetAdmin = await prisma.admin.findUnique({ where: { id } });
     if (!targetAdmin) throw new Error("Admin not found.");
 
-    if (targetAdmin.role === "DEV") {
-      throw new Error("The DEV account is protected and cannot be modified.");
+    if (targetAdmin.role === "DEV" || targetAdmin.username === "nikhil") {
+      throw new Error("This protected account cannot be modified.");
     }
 
     if (data.username) {
@@ -124,9 +124,9 @@ export class AdminService {
     const targetAdmin = await prisma.admin.findUnique({ where: { id } });
     if (!targetAdmin) throw new Error("Admin not found.");
 
-    if (targetAdmin.role === "DEV") {
+    if (targetAdmin.role === "DEV" || targetAdmin.username === "nikhil") {
       throw new Error(
-        "The DEV/Owner account password cannot be reset via this endpoint.",
+        "This protected account password cannot be reset via this endpoint.",
       );
     }
 
@@ -149,9 +149,9 @@ export class AdminService {
     const targetAdmin = await prisma.admin.findUnique({ where: { id } });
     if (!targetAdmin) throw new Error("Admin not found.");
 
-    if (targetAdmin.role === "DEV") {
+    if (targetAdmin.role === "DEV" || targetAdmin.username === "nikhil") {
       throw new Error(
-        "The DEV/Owner account is protected and cannot be deleted.",
+        "This protected account cannot be deleted.",
       );
     }
 

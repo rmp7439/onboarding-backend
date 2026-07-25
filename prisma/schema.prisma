@@ -90,7 +90,6 @@ model Employee {
   nomineeName            String?
   nomineeRelation        String?
   nomineeMobile          String?
-  nomineePercentage      Int?
   selfieFilename         String?
   selfieMimeType         String?
   selfieSize             Int?

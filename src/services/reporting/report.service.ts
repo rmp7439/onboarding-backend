@@ -26,10 +26,9 @@ function buildDateFilter(filters: ReportFilters) {
   const year = parseInt(filters.year, 10);
 
   if (filters.month) {
-    const month = parseInt(filters.month, 10) - 1; // 0-indexed in JS
+    const month = parseInt(filters.month, 10) - 1; 
 
     if (filters.day) {
-      // Day + Month + Year
       const day = parseInt(filters.day, 10);
       return {
         joiningDate: {
@@ -38,7 +37,6 @@ function buildDateFilter(filters: ReportFilters) {
         },
       };
     }
-    // Month + Year
     return {
       joiningDate: {
         gte: new Date(year, month, 1),
@@ -47,7 +45,6 @@ function buildDateFilter(filters: ReportFilters) {
     };
   }
 
-  // Year only
   return {
     joiningDate: {
       gte: new Date(year, 0, 1),
@@ -62,7 +59,7 @@ async function buildReportFilter(filters: ReportFilters) {
   if (filters.year) {
     const year = parseInt(filters.year, 10);
     if (filters.month) {
-      const month = parseInt(filters.month, 10) - 1; // 0-indexed in JS
+      const month = parseInt(filters.month, 10) - 1; 
       if (filters.day) {
         const day = parseInt(filters.day, 10);
         where.joiningDate = {
@@ -94,7 +91,6 @@ async function buildReportFilter(filters: ReportFilters) {
       const userUnits = user.units.map((u) => u.unit.name);
       where.unit = { in: userUnits };
     } else {
-      // If user has no units assigned, they shouldn't match any employees
       where.unit = { in: [] };
     }
   }
@@ -107,11 +103,9 @@ function renderEmployeeProfileLayout(
   employee: any,
   baseUrl: string,
 ) {
-  // Header
   doc.fontSize(20).text("Employee Profile", { align: "center" });
   doc.moveDown();
 
-  // Status & Code
   doc
     .fontSize(12)
     .font("Helvetica-Bold")
@@ -120,7 +114,6 @@ function renderEmployeeProfileLayout(
   doc.moveDown();
 
   const addSection = (title: string, data: Record<string, any>) => {
-    // Check if we need a page break before starting a new section to avoid splitting headers
     if (doc.y > doc.page.height - 100) {
       doc.addPage();
     }
@@ -130,12 +123,10 @@ function renderEmployeeProfileLayout(
     doc.fontSize(10).font("Helvetica").fillColor("#000000");
 
     Object.entries(data).forEach(([key, value]) => {
-      // Calculate height of the text to be added
       const text = `${value || "N/A"}`;
       const options = { continued: false, width: doc.page.width - 150 };
       const height = doc.heightOfString(`${key}: ${text}`, options);
 
-      // Add page break if the text will overflow
       if (doc.y + height > doc.page.height - 50) {
         doc.addPage();
       }
@@ -204,10 +195,8 @@ function renderEmployeeProfileLayout(
     "Nominee Name": employee.nomineeName,
     "Relationship": employee.nomineeRelation,
     "Mobile Number": employee.nomineeMobile,
-    "Percentage": employee.nomineePercentage ? `${employee.nomineePercentage}%` : "N/A",
   });
 
-  // Documents Section
   if (doc.y > doc.page.height - 150) {
     doc.addPage();
   }
@@ -349,12 +338,10 @@ export class ReportService {
       { header: "NOMINEE NAME", key: "nomineeName", width: 25 },
       { header: "NOMINEE RELATION", key: "nomineeRelation", width: 20 },
       { header: "NOMINEE MOBILE", key: "nomineeMobile", width: 15 },
-      { header: "NOMINEE PERCENTAGE", key: "nomineePercentage", width: 10 },
       { header: "CompID", key: "compId", width: 15 },
       { header: "Error", key: "error", width: 10 },
     ];
 
-    // Document Specific Columns
     const documentColumns = DOC_TYPES.map((dt) => ({
       header: `${dt.label.toUpperCase()} DOC`,
       key: `doc_${dt.type}`,
@@ -424,13 +411,11 @@ export class ReportService {
         nomineeName: emp.nomineeName || "",
         nomineeRelation: emp.nomineeRelation || "",
         nomineeMobile: emp.nomineeMobile || "",
-        nomineePercentage: emp.nomineePercentage || "",
         compId: "",
         error: "",
         additionalCol1: "Processed",
       };
 
-      // Map dynamic document links to the row
       DOC_TYPES.forEach((dt) => {
         rowData[`doc_${dt.type}`] = getDocHyperlink(
           emp.documents,
@@ -465,7 +450,6 @@ export class ReportService {
         doc.on("data", buffers.push.bind(buffers));
         doc.on("end", () => resolve(Buffer.concat(buffers)));
 
-        // Call shared layout logic
         renderEmployeeProfileLayout(doc, employee, baseUrl);
 
         doc.end();
@@ -498,7 +482,6 @@ export class ReportService {
         doc.on("data", buffers.push.bind(buffers));
         doc.on("end", () => resolve(Buffer.concat(buffers)));
 
-        // Loop through filtered employees and add page breaks
         employees.forEach((employee, index) => {
           if (index > 0) doc.addPage();
           renderEmployeeProfileLayout(doc, employee, baseUrl);
