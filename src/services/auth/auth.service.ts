@@ -13,7 +13,9 @@ export class AuthService {
 
     // Properly typed! No more 'any'
     if (!admin.active) {
-      throw new Error("Account has been disabled. Please contact the system owner.");
+      throw new Error(
+        "Account has been disabled. Please contact the system owner.",
+      );
     }
 
     const isValidPassword = await bcrypt.compare(password, admin.password);
@@ -93,8 +95,10 @@ export class AuthService {
   }
 
   static async createInitialAdmin() {
-    const exists = await prisma.admin.count();
-    if (exists === 0) {
+    const adminCount = await prisma.admin.count();
+
+    if (adminCount === 0) {
+      // Fresh database: Create the initial DEV owner account
       const email = process.env.DEFAULT_ADMIN_EMAIL || "admin@company.com";
       const password = process.env.DEFAULT_ADMIN_PASSWORD || "ChangeMe123!";
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -107,6 +111,27 @@ export class AuthService {
           role: "DEV", // Set initial owner role
         },
       });
+      console.log("[AuthService] Initial DEV account created.");
+    } else {
+      // Existing database: Ensure at least one DEV account exists
+      const devCount = await prisma.admin.count({ where: { role: "DEV" } });
+
+      if (devCount === 0) {
+        // Migration: If no DEV exists, promote the oldest admin account to DEV
+        const firstAdmin = await prisma.admin.findFirst({
+          orderBy: { createdAt: "asc" },
+        });
+
+        if (firstAdmin) {
+          await prisma.admin.update({
+            where: { id: firstAdmin.id },
+            data: { role: "DEV" },
+          });
+          console.log(
+            `[AuthService] Migrated initial admin (${firstAdmin.email}) to DEV role.`,
+          );
+        }
+      }
     }
   }
 
