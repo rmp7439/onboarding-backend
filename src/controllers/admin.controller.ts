@@ -6,8 +6,8 @@ const getActorContext = (req: Request) => {
   const adminReq = (req as any).admin || (req as any).user;
   return {
     id: adminReq.id,
-    name: adminReq.name || adminReq.email,
-    email: adminReq.email,
+    name: adminReq.name || adminReq.username,
+    username: adminReq.username, // Pulled from updated JWT
     role: adminReq.role,
     ip: req.ip,
     userAgent: req.get('User-Agent')

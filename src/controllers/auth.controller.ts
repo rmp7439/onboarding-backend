@@ -4,7 +4,7 @@ import { AuthService } from "../services/auth/auth.service";
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     // Replaced 'mobile' with 'userId'
-    const { email, userId, password } = req.body;
+    const { username, userId, password } = req.body;
     
     // Field Manager Login
     if (userId) {
@@ -18,12 +18,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Admin Login
-    if (!email || !password) {
-      res.status(400).json({ success: false, error: "Email/User ID and password are required" });
+    if (!username || !password) {
+      res.status(400).json({ success: false, error: "Username and password are required" });
       return;
     }
 
-    const data = await AuthService.login(email, password);
+    const data = await AuthService.login(username, password);
     res.status(200).json({ success: true, data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Authentication failed";

@@ -4,7 +4,7 @@ import { logger } from "../../utils/logger";
 export interface ActorContext {
   id: string;
   name: string;
-  email: string;
+  username: string; // Changed from email
   role: string;
   ip?: string;
   userAgent?: string;
@@ -57,19 +57,18 @@ export class ActivityLogService {
           action: data.action,
           actorId: data.actor.id,
           actorName: data.actor.name || 'Unknown',
-          actorEmail: data.actor.email,
+          actorEmail: data.actor.username, // Storing username here for DB backwards compatibility
           actorRole: data.actor.role,
           targetId: data.target?.id,
           targetName: data.target?.name,
           targetType: data.target?.type,
-          changes: data.changes || undefined, // <-- FIXED: Changed null to undefined for Prisma compatibility
+          changes: data.changes || undefined,
           ipAddress: data.actor.ip,
           userAgent: data.actor.userAgent,
         }
       });
     } catch (error) {
-      // Non-blocking: Do not crash the application if logging fails
-      logger.error("Failed to write Activity Log:", error);
+      console.error("Failed to write Activity Log:", error);
     }
   }
 
