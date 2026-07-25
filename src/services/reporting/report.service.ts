@@ -20,39 +20,6 @@ const DOC_TYPES = [
   { type: "DISCHARGE_BOOK", label: "Discharge Book" },
 ];
 
-function buildDateFilter(filters: ReportFilters) {
-  if (!filters.year) return {};
-
-  const year = parseInt(filters.year, 10);
-
-  if (filters.month) {
-    const month = parseInt(filters.month, 10) - 1; 
-
-    if (filters.day) {
-      const day = parseInt(filters.day, 10);
-      return {
-        joiningDate: {
-          gte: new Date(year, month, day),
-          lt: new Date(year, month, day + 1),
-        },
-      };
-    }
-    return {
-      joiningDate: {
-        gte: new Date(year, month, 1),
-        lt: new Date(year, month + 1, 1),
-      },
-    };
-  }
-
-  return {
-    joiningDate: {
-      gte: new Date(year, 0, 1),
-      lt: new Date(year + 1, 0, 1),
-    },
-  };
-}
-
 async function buildReportFilter(filters: ReportFilters) {
   const where: any = {};
 
@@ -329,17 +296,35 @@ export class ReportService {
       { header: "DESIGNATION CODE", key: "designationCode", width: 20 },
       { header: "EMP CAT CODE", key: "empCatCode", width: 15 },
       { header: "LocalAdd1", key: "localAdd1", width: 25 },
-      { header: "LocalAdd2", key: "localAdd2", width: 25 },
-      { header: "LocalPincode", key: "localPincode", width: 15 },
+      { header: "CURR_STATE", key: "currState", width: 20 },
+      { header: "CURR_CITY", key: "currCity", width: 20 },
+      { header: "CURR_PINCODE", key: "currPincode", width: 15 },
       { header: "PermanentAdd1", key: "permanentAdd1", width: 25 },
-      { header: "PermanentAdd2", key: "permanentAdd2", width: 25 },
-      { header: "PermanentPincode", key: "permanentPincode", width: 15 },
+      { header: "PERM_STATE", key: "permState", width: 20 },
+      { header: "PERM_CITY", key: "permCity", width: 20 },
+      { header: "PERM_PINCODE", key: "permPincode", width: 15 },
       { header: "PoliceStation", key: "policeStation", width: 20 },
       { header: "NOMINEE NAME", key: "nomineeName", width: 25 },
       { header: "NOMINEE RELATION", key: "nomineeRelation", width: 20 },
       { header: "NOMINEE MOBILE", key: "nomineeMobile", width: 15 },
       { header: "CompID", key: "compId", width: 15 },
       { header: "Error", key: "error", width: 10 },
+      { header: "Nominee Name", key: "appNomineeName", width: 25 },
+      { header: "Nominee Relationship", key: "appNomineeRelation", width: 20 },
+      { header: "Nominee DOB", key: "nomineeDob", width: 15 },
+      { header: "Nominee Mobile Number", key: "appNomineeMobile", width: 20 },
+      { header: "Police Station", key: "appPoliceStation", width: 20 },
+      { header: "Police Station Address", key: "policeStationAddress", width: 25 },
+      { header: "Husband Name", key: "husbandName", width: 20 },
+      { header: "Blood Group", key: "bloodGroup", width: 15 },
+      { header: "Emergency Name", key: "emergencyName", width: 25 },
+      { header: "Emergency Relation", key: "emergencyRelation", width: 20 },
+      { header: "Emergency Phone", key: "emergencyPhone", width: 15 },
+      { header: "Unit", key: "unit", width: 15 },
+      { header: "Reject Reason", key: "rejectReason", width: 25 },
+      { header: "Correction Remark", key: "correctionRemark", width: 25 },
+      { header: "Uploaded At", key: "uploadedAt", width: 20 },
+      { header: "Updated At", key: "updatedAt", width: 20 },
     ];
 
     const documentColumns = DOC_TYPES.map((dt) => ({
@@ -402,17 +387,35 @@ export class ReportService {
         designationCode: "",
         empCatCode: "",
         localAdd1: emp.currentAddress || "",
-        localAdd2: emp.currentCity ? `${emp.currentCity}, ${emp.currentState}` : "",
-        localPincode: emp.currentPinCode || "",
+        currState: emp.currentState || "",
+        currCity: emp.currentCity || "",
+        currPincode: emp.currentPinCode || "",
         permanentAdd1: emp.permanentAddress || "",
-        permanentAdd2: emp.city ? `${emp.city}, ${emp.state}` : "",
-        permanentPincode: emp.pinCode || "",
+        permState: emp.state || "",
+        permCity: emp.city || "",
+        permPincode: emp.pinCode || "",
         policeStation: emp.permanentPoliceStation || "",
         nomineeName: emp.nomineeName || "",
         nomineeRelation: emp.nomineeRelation || "",
         nomineeMobile: emp.nomineeMobile || "",
         compId: "",
         error: "",
+        appNomineeName: emp.nomineeName || "",
+        appNomineeRelation: emp.nomineeRelation || "",
+        nomineeDob: "", 
+        appNomineeMobile: emp.nomineeMobile || "",
+        appPoliceStation: emp.permanentPoliceStation || "",
+        policeStationAddress: "", 
+        husbandName: emp.husbandName || "",
+        bloodGroup: emp.bloodGroup ? emp.bloodGroup.replace(/_/g, ' ') : "",
+        emergencyName: emp.emergencyName || "",
+        emergencyRelation: emp.emergencyRelation || "",
+        emergencyPhone: emp.emergencyPhone || "",
+        unit: emp.unit || "",
+        rejectReason: emp.rejectReason || "",
+        correctionRemark: emp.correctionRemark || "",
+        uploadedAt: emp.uploadedAt ? emp.uploadedAt.toISOString() : "",
+        updatedAt: emp.updatedAt ? emp.updatedAt.toISOString() : "",
         additionalCol1: "Processed",
       };
 
