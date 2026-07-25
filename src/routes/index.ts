@@ -8,6 +8,7 @@ import reportRouter from './report.route';
 import downloadRouter from './download.route';
 import adminRouter from './admin.route';
 import activityLogRouter from './activity-log.route';
+import bankRouter from './bank.route';
 
 // 1. Import the new modules
 import userRouter from './user.route';
@@ -28,5 +29,6 @@ router.use(userRouter);
 router.use(unitRouter);
 router.use(adminRouter);
 router.use(activityLogRouter);
+router.use(bankRouter);
 
 export default router;
