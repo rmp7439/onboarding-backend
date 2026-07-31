@@ -37,7 +37,6 @@ export class EmployeeService {
         throw new Error("PAN already registered.");
     }
 
-    // Ensure unit defaults to Development if missing or unintended placeholder
     if (
       !data.unit ||
       data.unit === "" ||
@@ -90,6 +89,7 @@ export class EmployeeService {
         status: true,
         uploadedAt: true,
         updatedAt: true,
+        joiningDate: true, // Appended field for Application Filtering
       },
     });
   }
@@ -184,7 +184,6 @@ export class EmployeeService {
   }
 
   static async getAllEmployees(searchQuery?: string): Promise<Employee[]> {
-    // Automatically assign missing or test units to 'Development'
     const devUnit = await prisma.unit.findUnique({
       where: { name: "Development" },
     });
@@ -302,7 +301,6 @@ export class EmployeeService {
       data: updateData,
     });
 
-    // Execute logging hook
     const changes = ActivityLogService.computeChanges(
       employee,
       updatedEmployee,
