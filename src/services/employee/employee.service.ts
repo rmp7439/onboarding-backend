@@ -67,6 +67,50 @@ export class EmployeeService {
     });
   }
 
+  static async deleteEmployee(id: string, actor: ActorContext): Promise<void> {
+  const employee = await prisma.employee.findUnique({
+    where: { id },
+    include: { documents: true },
+  });
+
+  if (!employee) throw new Error("Employee not found.");
+
+  // Gather file paths to delete from cloud/local storage
+  const filePaths: string[] = [];
+  if (employee.selfieFilename) filePaths.push(employee.selfieFilename);
+  employee.documents.forEach((doc) => {
+    if (doc.storedFilename) filePaths.push(doc.storedFilename);
+  });
+
+  // Execute database removal inside a transaction
+  await prisma.$transaction(async (tx) => {
+    await tx.employee.delete({ where: { id } });
+  });
+
+  // Cleanup physical files
+  if (filePaths.length > 0) {
+    for (const path of filePaths) {
+      try {
+        await StorageService.delete(path);
+      } catch (e) {
+        console.error(`Storage cleanup failed for ${path}`, e);
+      }
+    }
+  }
+
+  // Permanent Audit Log
+  await ActivityLogService.logAction({
+    action: "EMPLOYEE_DELETED",
+    actor,
+    target: {
+      id: employee.id,
+      name: `${employee.firstName} ${employee.surname}`,
+      type: "EMPLOYEE",
+    },
+    changes: [{ field: "status", old: employee.status, new: "DELETED" }],
+  });
+}
+
   static async getMyUnitEmployees(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },

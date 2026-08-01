@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import { EmployeeService } from "../services/employee/employee.service";
 import { StorageService } from "../services/storage/storage.service";
 import { UserService } from "../services/user/user.service";
+import { ActivityLogService } from "../services/logging/activity-log.service";
 
 export const register: RequestHandler = async (req, res): Promise<void> => {
   try {
@@ -250,6 +251,44 @@ export const adminUpdateEmployee: RequestHandler = async (
       : error.message.includes("not found")
         ? 404
         : 400;
+    res.status(statusCode).json({ success: false, error: error.message });
+  }
+};
+
+export const deleteEmployee: RequestHandler = async (req, res): Promise<void> => {
+  const admin = (req as any).admin || (req as any).user;
+  
+  const actorContext = {
+    id: admin?.id || "unknown",
+    name: admin?.name || "unknown",
+    username: admin?.username || "unknown",
+    role: admin?.role || "unknown",
+    ip: req.ip,
+    userAgent: req.get("User-Agent"),
+  };
+
+  // Strict Authorization Constraint
+  if (actorContext.username !== "dev" && actorContext.username !== "nikhil") {
+    res.status(403).json({ 
+      success: false, 
+      error: "Forbidden: You do not have permission to delete employee records." 
+    });
+    return;
+  }
+
+  try {
+    await EmployeeService.deleteEmployee(String(req.params.id), actorContext);
+    res.status(200).json({ success: true, data: { deleted: true } });
+  } catch (error: any) {
+    // Log Failed Attempt
+    await ActivityLogService.logAction({
+      action: "EMPLOYEE_DELETE_FAILED",
+      actor: actorContext,
+      target: { id: String(req.params.id), name: "Unknown", type: "EMPLOYEE" },
+      changes: [{ field: "reason", old: null, new: error.message }],
+    });
+
+    const statusCode = error.message.includes("not found") ? 404 : 400;
     res.status(statusCode).json({ success: false, error: error.message });
   }
 };

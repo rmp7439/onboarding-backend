@@ -20,6 +20,7 @@ import {
   validateEmployeeUpdate
 } from '../middleware/employee.validator';
 import { authenticateToken, RequireRole, ROLES } from '../middleware/auth.middleware';
+import { deleteEmployee } from '../controllers/employee.controller';
 
 const router = Router();
 
@@ -40,6 +41,12 @@ router.get('/employee/:id', authenticateToken as RequestHandler, RequireRole(ROL
 router.patch('/employee/status', authenticateToken as RequestHandler, RequireRole(ROLES.DEV, ROLES.ADMIN) as RequestHandler, validateStatusUpdate as RequestHandler, updateStatus as RequestHandler);
 router.patch('/employee/code', authenticateToken as RequestHandler, RequireRole(ROLES.DEV, ROLES.ADMIN) as RequestHandler, validateCodeUpdate as RequestHandler, updateCode as RequestHandler);
 router.patch('/employee/:id/return', authenticateToken as RequestHandler, RequireRole(ROLES.DEV, ROLES.ADMIN) as RequestHandler, validateReturnForCorrection as RequestHandler, returnForCorrection as RequestHandler);
+router.delete(
+  '/employee/:id', 
+  authenticateToken as RequestHandler, 
+  RequireRole(ROLES.DEV, ROLES.ADMIN) as RequestHandler, 
+  deleteEmployee as RequestHandler
+);
 
 // ==============================
 // Phase 3: Admin Employee Editing
